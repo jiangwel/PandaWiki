@@ -108,6 +108,11 @@ func (h *ModelHandler) CreateModel(c echo.Context) error {
 		return h.NewResponseWithError(c, "联创版只能使用百智云模型哦~", nil)
 	}
 	ctx := c.Request().Context()
+
+	param := domain.ModelParam{}
+	if req.Param != nil {
+		param = *req.Param
+	}
 	model := &domain.Model{
 		ID:         uuid.New().String(),
 		Provider:   req.Provider,
@@ -117,6 +122,8 @@ func (h *ModelHandler) CreateModel(c echo.Context) error {
 		BaseURL:    req.BaseURL,
 		APIVersion: req.APIVersion,
 		Type:       req.Type,
+		IsActive:   true,
+		Param:      param,
 	}
 	if err := h.usecase.Create(ctx, model); err != nil {
 		return h.NewResponseWithError(c, "create model failed", err)

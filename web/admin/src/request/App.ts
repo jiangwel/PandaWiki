@@ -14,6 +14,7 @@ import httpRequest, { ContentType, RequestParams } from "./httpClient";
 import {
   DeleteApiV1AppParams,
   DomainAppDetailResp,
+  DomainPWResponse,
   DomainResponse,
   DomainUpdateAppReq,
   GetApiV1AppDetailParams,
@@ -71,7 +72,7 @@ export const deleteApiV1App = (
  * @name GetApiV1AppDetail
  * @summary Get app detail
  * @request GET:/api/v1/app/detail
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: DomainAppDetailResp,
 
 })` OK
@@ -82,7 +83,7 @@ export const getApiV1AppDetail = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainAppDetailResp;
     }
   >({

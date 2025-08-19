@@ -20,11 +20,11 @@ import {
   DomainGetSpaceListReq,
   DomainGetSpaceListResp,
   DomainNotnionGetListReq,
+  DomainPWResponse,
   DomainPage,
   DomainPageInfo,
   DomainParseURLReq,
   DomainParseURLResp,
-  DomainResponse,
   DomainScrapeReq,
   DomainScrapeResp,
   DomainSearchDocxReq,
@@ -48,7 +48,7 @@ import {
  * @name PostApiV1CrawlerConfluenceAnalysisExportFile
  * @summary AnalysisConfluenceExportFile
  * @request POST:/api/v1/crawler/confluence/analysis_export_file
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainAnalysisConfluenceResp)[],
 
 })` OK
@@ -59,7 +59,7 @@ export const postApiV1CrawlerConfluenceAnalysisExportFile = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainAnalysisConfluenceResp[];
     }
   >({
@@ -78,7 +78,7 @@ export const postApiV1CrawlerConfluenceAnalysisExportFile = (
  * @name PostApiV1CrawlerEpubConvert
  * @summary QpubConvert
  * @request POST:/api/v1/crawler/epub/convert
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: DomainEpubResp,
 
 })` OK
@@ -89,7 +89,7 @@ export const postApiV1CrawlerEpubConvert = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainEpubResp;
     }
   >({
@@ -108,7 +108,7 @@ export const postApiV1CrawlerEpubConvert = (
  * @name PostApiV1CrawlerFeishuGetDoc
  * @summary FeishuGetDocx
  * @request POST:/api/v1/crawler/feishu/get_doc
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainGetDocxResp)[],
 
 })` OK
@@ -119,7 +119,7 @@ export const postApiV1CrawlerFeishuGetDoc = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainGetDocxResp[];
     }
   >({
@@ -138,7 +138,7 @@ export const postApiV1CrawlerFeishuGetDoc = (
  * @name PostApiV1CrawlerFeishuListDoc
  * @summary FeishuListDoc
  * @request POST:/api/v1/crawler/feishu/list_doc
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainSearchDocxResp)[],
 
 })` OK
@@ -149,7 +149,7 @@ export const postApiV1CrawlerFeishuListDoc = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainSearchDocxResp[];
     }
   >({
@@ -168,7 +168,7 @@ export const postApiV1CrawlerFeishuListDoc = (
  * @name PostApiV1CrawlerFeishuListSpaces
  * @summary FeishuListSpaces
  * @request POST:/api/v1/crawler/feishu/list_spaces
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainGetSpaceListResp)[],
 
 })` OK
@@ -179,7 +179,7 @@ export const postApiV1CrawlerFeishuListSpaces = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainGetSpaceListResp[];
     }
   >({
@@ -198,7 +198,7 @@ export const postApiV1CrawlerFeishuListSpaces = (
  * @name PostApiV1CrawlerFeishuSearchWiki
  * @summary FeishuSearchWiki
  * @request POST:/api/v1/crawler/feishu/search_wiki
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainSearchWikiResp)[],
 
 })` OK
@@ -209,7 +209,7 @@ export const postApiV1CrawlerFeishuSearchWiki = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainSearchWikiResp[];
     }
   >({
@@ -228,7 +228,7 @@ export const postApiV1CrawlerFeishuSearchWiki = (
  * @name PostApiV1CrawlerNotionGetDoc
  * @summary GetDocs
  * @request POST:/api/v1/crawler/notion/get_doc
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainPage)[],
 
 })` OK
@@ -239,7 +239,7 @@ export const postApiV1CrawlerNotionGetDoc = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainPage[];
     }
   >({
@@ -258,7 +258,7 @@ export const postApiV1CrawlerNotionGetDoc = (
  * @name PostApiV1CrawlerNotionGetList
  * @summary NotionGetList
  * @request POST:/api/v1/crawler/notion/get_list
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainPageInfo)[],
 
 })` OK
@@ -269,7 +269,7 @@ export const postApiV1CrawlerNotionGetList = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainPageInfo[];
     }
   >({
@@ -288,7 +288,7 @@ export const postApiV1CrawlerNotionGetList = (
  * @name PostApiV1CrawlerParseRss
  * @summary Parse RSS
  * @request POST:/api/v1/crawler/parse_rss
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: DomainParseURLResp,
 
 })` OK
@@ -299,7 +299,7 @@ export const postApiV1CrawlerParseRss = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainParseURLResp;
     }
   >({
@@ -318,7 +318,7 @@ export const postApiV1CrawlerParseRss = (
  * @name PostApiV1CrawlerParseSitemap
  * @summary Parse Sitemap
  * @request POST:/api/v1/crawler/parse_sitemap
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: DomainParseURLResp,
 
 })` OK
@@ -329,7 +329,7 @@ export const postApiV1CrawlerParseSitemap = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainParseURLResp;
     }
   >({
@@ -348,7 +348,7 @@ export const postApiV1CrawlerParseSitemap = (
  * @name PostApiV1CrawlerScrape
  * @summary Scrape
  * @request POST:/api/v1/crawler/scrape
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: DomainScrapeResp,
 
 })` OK
@@ -359,7 +359,7 @@ export const postApiV1CrawlerScrape = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainScrapeResp;
     }
   >({
@@ -378,7 +378,7 @@ export const postApiV1CrawlerScrape = (
  * @name PostApiV1CrawlerSiyuanAnalysisExportFile
  * @summary AnalysisSiyuanExportFile
  * @request POST:/api/v1/crawler/siyuan/analysis_export_file
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainSiYuanResp)[],
 
 })` OK
@@ -389,7 +389,7 @@ export const postApiV1CrawlerSiyuanAnalysisExportFile = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainSiYuanResp[];
     }
   >({
@@ -408,7 +408,7 @@ export const postApiV1CrawlerSiyuanAnalysisExportFile = (
  * @name PostApiV1CrawlerWikijsAnalysisExportFile
  * @summary AnalysisWikijsExportFile
  * @request POST:/api/v1/crawler/wikijs/analysis_export_file
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainWikiJSResp)[],
 
 })` OK
@@ -419,7 +419,7 @@ export const postApiV1CrawlerWikijsAnalysisExportFile = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainWikiJSResp[];
     }
   >({
@@ -438,7 +438,7 @@ export const postApiV1CrawlerWikijsAnalysisExportFile = (
  * @name PostApiV1CrawlerYuqueAnalysisExportFile
  * @summary AnalysisYuqueExportFile
  * @request POST:/api/v1/crawler/yuque/analysis_export_file
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainYuqueResp)[],
 
 })` OK
@@ -449,7 +449,7 @@ export const postApiV1CrawlerYuqueAnalysisExportFile = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainYuqueResp[];
     }
   >({

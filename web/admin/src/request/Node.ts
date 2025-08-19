@@ -19,6 +19,7 @@ import {
   DomainNodeDetailResp,
   DomainNodeListItemResp,
   DomainNodeSummaryReq,
+  DomainPWResponse,
   DomainRecommendNodeListResp,
   DomainResponse,
   DomainUpdateNodeReq,
@@ -34,7 +35,7 @@ import {
  * @name PostApiV1Node
  * @summary Create Node
  * @request POST:/api/v1/node
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: Record<string, any>,
 
 })` OK
@@ -45,7 +46,7 @@ export const postApiV1Node = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: Record<string, any>;
     }
   >({
@@ -64,7 +65,7 @@ export const postApiV1Node = (
  * @name PostApiV1NodeAction
  * @summary Node Action
  * @request POST:/api/v1/node/action
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: Record<string, any>,
 
 })` OK
@@ -75,7 +76,7 @@ export const postApiV1NodeAction = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: Record<string, any>;
     }
   >({
@@ -117,7 +118,7 @@ export const postApiV1NodeBatchMove = (
  * @name GetApiV1NodeDetail
  * @summary Get Node Detail
  * @request GET:/api/v1/node/detail
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: DomainNodeDetailResp,
 
 })` OK
@@ -128,7 +129,7 @@ export const getApiV1NodeDetail = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainNodeDetailResp;
     }
   >({
@@ -170,7 +171,7 @@ export const putApiV1NodeDetail = (
  * @name GetApiV1NodeList
  * @summary Get Node List
  * @request GET:/api/v1/node/list
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainNodeListItemResp)[],
 
 })` OK
@@ -181,7 +182,7 @@ export const getApiV1NodeList = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainNodeListItemResp[];
     }
   >({
@@ -223,7 +224,7 @@ export const postApiV1NodeMove = (
  * @name GetApiV1NodeRecommendNodes
  * @summary Recommend Nodes
  * @request GET:/api/v1/node/recommend_nodes
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: (DomainRecommendNodeListResp)[],
 
 })` OK
@@ -234,7 +235,7 @@ export const getApiV1NodeRecommendNodes = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainRecommendNodeListResp[];
     }
   >({

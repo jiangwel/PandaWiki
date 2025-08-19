@@ -17,44 +17,7 @@ export enum SchemaRoleType {
   Tool = "tool",
 }
 
-export enum DomainStatPageScene {
-  StatPageSceneWelcome = 1,
-  StatPageSceneNodeDetail = 2,
-  StatPageSceneChat = 3,
-  StatPageSceneLogin = 4,
-}
-
-export enum DomainScoreType {
-  Like = 1,
-  DisLike = -1,
-}
-
-/** @format int32 */
-export enum DomainNodeVisibility {
-  NodeVisibilityPrivate = 1,
-  NodeVisibilityPublic = 2,
-}
-
-/** @format int32 */
-export enum DomainNodeType {
-  NodeTypeFolder = 1,
-  NodeTypeDocument = 2,
-}
-
-/** @format int32 */
-export enum DomainNodeStatus {
-  NodeStatusDraft = 1,
-  NodeStatusReleased = 2,
-}
-
-export enum DomainModelType {
-  ModelTypeChat = "chat",
-  ModelTypeEmbedding = "embedding",
-  ModelTypeRerank = "rerank",
-}
-
-export enum DomainModelProvider {
-  /** 智谱 */
+export enum GithubComChaitinPandaWikiDomainModelProvider {
   ModelProviderBrandOpenAI = "OpenAI",
   ModelProviderBrandOllama = "Ollama",
   ModelProviderBrandDeepSeek = "DeepSeek",
@@ -70,12 +33,44 @@ export enum DomainModelProvider {
   ModelProviderBrandOther = "Other",
 }
 
+export enum DomainStatPageScene {
+  StatPageSceneWelcome = 1,
+  StatPageSceneNodeDetail = 2,
+  StatPageSceneChat = 3,
+  StatPageSceneLogin = 4,
+}
+
+export enum DomainScoreType {
+  Like = 1,
+  DisLike = -1,
+}
+
+export enum DomainNodeVisibility {
+  NodeVisibilityPrivate = 1,
+  NodeVisibilityPublic = 2,
+}
+
+export enum DomainNodeType {
+  NodeTypeFolder = 1,
+  NodeTypeDocument = 2,
+}
+
+export enum DomainNodeStatus {
+  NodeStatusDraft = 1,
+  NodeStatusReleased = 2,
+}
+
+export enum DomainModelType {
+  ModelTypeChat = "chat",
+  ModelTypeEmbedding = "embedding",
+  ModelTypeRerank = "rerank",
+}
+
 export enum DomainMessageFrom {
   MessageFromGroup = 1,
   MessageFromPrivate = 2,
 }
 
-/** @format int32 */
 export enum DomainCommentStatus {
   CommentStatusReject = -1,
   CommentStatusPending = 0,
@@ -83,15 +78,11 @@ export enum DomainCommentStatus {
 }
 
 export enum DomainAuthType {
-  /** 无认证 */
   AuthTypeNull = "",
-  /** 简单口令 */
   AuthTypeSimple = "simple",
-  /** 企业认证 */
   AuthTypeEnterprise = "enterprise",
 }
 
-/** @format int32 */
 export enum DomainAppType {
   AppTypeWeb = 1,
   AppTypeWidget = 2,
@@ -104,20 +95,14 @@ export enum DomainAppType {
 }
 
 export enum ConstsUserRole {
-  /** 管理员 */
   UserRoleAdmin = "admin",
-  /** 普通用户 */
   UserRoleUser = "user",
 }
 
 export enum ConstsUserKBPermission {
-  /** 无权限 */
   UserKBPermissionNull = "",
-  /** 完全控制 */
   UserKBPermissionFullControl = "full_control",
-  /** 文档管理 */
   UserKBPermissionDocManage = "doc_manage",
-  /** 数据运营 */
   UserKBPermissionDataOperate = "data_operate",
 }
 
@@ -337,35 +322,6 @@ export interface DomainChatRequest {
   nonce?: string;
 }
 
-export interface DomainCheckModelReq {
-  api_header?: string;
-  api_key?: string;
-  /** for azure openai */
-  api_version?: string;
-  base_url: string;
-  model: string;
-  provider:
-    | "OpenAI"
-    | "Ollama"
-    | "DeepSeek"
-    | "SiliconFlow"
-    | "Moonshot"
-    | "Other"
-    | "AzureOpenAI"
-    | "BaiZhiCloud"
-    | "Hunyuan"
-    | "BaiLian"
-    | "Volcengine"
-    | "Gemini"
-    | "ZhiPu";
-  type: "chat" | "embedding" | "rerank";
-}
-
-export interface DomainCheckModelResp {
-  content?: string;
-  error?: string;
-}
-
 export interface DomainCommentInfo {
   auth_user_id?: number;
   /** avatar */
@@ -443,7 +399,7 @@ export interface DomainConversationMessage {
   parent_id?: string;
   prompt_tokens?: number;
   /** model */
-  provider?: DomainModelProvider;
+  provider?: GithubComChaitinPandaWikiDomainModelProvider;
   /** stats */
   remote_ip?: string;
   role?: SchemaRoleType;
@@ -498,6 +454,7 @@ export interface DomainCreateModelReq {
   api_version?: string;
   base_url: string;
   model: string;
+  param?: DomainModelParam;
   provider:
     | "OpenAI"
     | "Ollama"
@@ -655,25 +612,19 @@ export interface DomainModelDetailResp {
   id?: string;
   model?: string;
   prompt_tokens?: number;
-  provider?: DomainModelProvider;
+  provider?: GithubComChaitinPandaWikiDomainModelProvider;
   total_tokens?: number;
   type?: DomainModelType;
   updated_at?: string;
 }
 
-export interface DomainModelListItem {
-  api_header?: string;
-  api_key?: string;
-  /** for azure openai */
-  api_version?: string;
-  base_url?: string;
-  completion_tokens?: number;
-  id?: string;
-  model?: string;
-  prompt_tokens?: number;
-  provider?: DomainModelProvider;
-  total_tokens?: number;
-  type?: DomainModelType;
+export interface DomainModelParam {
+  context_window?: number;
+  max_tokens?: number;
+  r1_enabled?: boolean;
+  support_computer_use?: boolean;
+  support_images?: boolean;
+  support_prompt_cache?: boolean;
 }
 
 export interface DomainMoveNodeReq {
@@ -734,6 +685,12 @@ export interface DomainNotnionGetListReq {
 
 export interface DomainObjectUploadResp {
   key?: string;
+}
+
+export interface DomainPWResponse {
+  data?: unknown;
+  message?: string;
+  success?: boolean;
 }
 
 export interface DomainPage {
@@ -905,6 +862,7 @@ export interface DomainUpdateModelReq {
   base_url: string;
   id: string;
   model: string;
+  param?: DomainModelParam;
   provider:
     | "OpenAI"
     | "Ollama"
@@ -970,6 +928,50 @@ export interface DomainWikiJSResp {
 export interface DomainYuqueResp {
   content?: string;
   title?: string;
+}
+
+export interface GithubComChaitinPandaWikiDomainCheckModelReq {
+  api_header?: string;
+  api_key?: string;
+  /** for azure openai */
+  api_version?: string;
+  base_url: string;
+  model: string;
+  provider:
+    | "OpenAI"
+    | "Ollama"
+    | "DeepSeek"
+    | "SiliconFlow"
+    | "Moonshot"
+    | "Other"
+    | "AzureOpenAI"
+    | "BaiZhiCloud"
+    | "Hunyuan"
+    | "BaiLian"
+    | "Volcengine"
+    | "Gemini"
+    | "ZhiPu";
+  type: "chat" | "embedding" | "rerank";
+}
+
+export interface GithubComChaitinPandaWikiDomainCheckModelResp {
+  content?: string;
+  error?: string;
+}
+
+export interface GithubComChaitinPandaWikiDomainModelListItem {
+  api_header?: string;
+  api_key?: string;
+  /** for azure openai */
+  api_version?: string;
+  base_url?: string;
+  completion_tokens?: number;
+  id?: string;
+  model?: string;
+  prompt_tokens?: number;
+  provider?: GithubComChaitinPandaWikiDomainModelProvider;
+  total_tokens?: number;
+  type?: DomainModelType;
 }
 
 export interface ShareShareCommentLists {
@@ -1070,7 +1072,6 @@ export interface GetApiV1CommentParams {
   page: number;
   /** @min 1 */
   per_page: number;
-  /** @format int32 */
   status?: -1 | 0 | 1;
 }
 

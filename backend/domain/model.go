@@ -1,6 +1,9 @@
 package domain
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	modelkitConsts "github.com/chaitin/ModelKit/consts"
@@ -49,6 +52,8 @@ type Model struct {
 	CompletionTokens uint64 `json:"completion_tokens" gorm:"default:0"`
 	TotalTokens      uint64 `json:"total_tokens" gorm:"default:0"`
 
+	Param ModelParam `json:"param" gorm:"column:parameters;type:jsonb"` // 高级参数
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -81,9 +86,10 @@ type ModelListItem struct {
 	APIVersion string        `json:"api_version"` // for azure openai
 	Type       ModelType     `json:"type"`
 
-	PromptTokens     uint64 `json:"prompt_tokens"`
-	CompletionTokens uint64 `json:"completion_tokens"`
-	TotalTokens      uint64 `json:"total_tokens"`
+	PromptTokens     uint64     `json:"prompt_tokens"`
+	CompletionTokens uint64     `json:"completion_tokens"`
+	TotalTokens      uint64     `json:"total_tokens"`
+	Param            ModelParam `json:"param" gorm:"column:parameters"`
 }
 
 type ModelDetailResp struct {
@@ -94,15 +100,47 @@ type ModelDetailResp struct {
 
 type CreateModelReq struct {
 	BaseModelInfo
+	Param *ModelParam `json:"param"`
 }
 
 type UpdateModelReq struct {
 	ID string `json:"id" validate:"required"`
 	BaseModelInfo
+	Param *ModelParam `json:"param"`
 }
 
 type CheckModelReq struct {
 	BaseModelInfo
+}
+
+type ModelParam struct {
+	ContextWindow      int  `json:"context_window"`
+	MaxTokens          int  `json:"max_tokens"`
+	R1Enabled          bool `json:"r1_enabled"`
+	SupportComputerUse bool `json:"support_computer_use"`
+	SupportImages      bool `json:"support_images"`
+	SupportPromptCache bool `json:"support_prompt_cache"`
+}
+
+// Value implements the driver.Valuer interface for GORM
+func (p ModelParam) Value() (driver.Value, error) {
+	return json.Marshal(p)
+}
+
+// Scan implements the sql.Scanner interface for GORM
+func (p *ModelParam) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	switch v := value.(type) {
+	case []byte:
+		return json.Unmarshal(v, p)
+	case string:
+		return json.Unmarshal([]byte(v), p)
+	default:
+		return fmt.Errorf("cannot scan %T into ModelParam", value)
+	}
 }
 
 type BaseModelInfo struct {

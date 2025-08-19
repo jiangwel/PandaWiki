@@ -6,7 +6,7 @@ dotenv.config({
 
 const config = [
   {
-    url: `${process.env.SWAGGER_BASE_URL}/swagger/doc.json`,
+    url: `http://localhost:8001/swagger.json`,
     authorizationToken: process.env.SWAGGER_AUTH_TOKEN,
     templates: './api-templates',
     output: './src/request',
@@ -14,12 +14,12 @@ const config = [
       return pathname.startsWith('/api/v1');
     },
   },
-  {
-    url: `${process.env.SWAGGER_BASE_URL}/api/pro/swagger/doc.json`,
-    authorizationToken: process.env.SWAGGER_AUTH_TOKEN,
-    templates: './api-templates',
-    output: './src/request/pro',
-  },
+  // {
+  //   url: `${process.env.SWAGGER_BASE_URL}/api/pro/swagger/doc.json`,
+  //   authorizationToken: process.env.SWAGGER_AUTH_TOKEN,
+  //   templates: './api-templates',
+  //   output: './src/request/pro',
+  // },
 ];
 
 export default config;

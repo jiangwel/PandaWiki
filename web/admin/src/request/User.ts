@@ -12,6 +12,7 @@
 
 import httpRequest, { ContentType, RequestParams } from "./httpClient";
 import {
+  DomainPWResponse,
   DomainResponse,
   V1CreateUserReq,
   V1DeleteUserReq,
@@ -93,7 +94,7 @@ export const deleteApiV1UserDelete = (
  * @name GetApiV1UserList
  * @summary ListUsers
  * @request GET:/api/v1/user/list
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: V1UserListResp,
 
 })` OK
@@ -101,7 +102,7 @@ export const deleteApiV1UserDelete = (
 
 export const getApiV1UserList = (params: RequestParams = {}) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: V1UserListResp;
     }
   >({

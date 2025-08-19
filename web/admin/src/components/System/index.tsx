@@ -6,11 +6,16 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { setModelStatus } from '@/store/slices/config';
 import { addOpacityToColor } from '@/utils';
 import { Box, Button, Stack, Tooltip, useTheme } from '@mui/material';
-import { Icon, Modal } from 'ct-mui';
+import { Icon, Modal, Message } from 'ct-mui';
 import { useEffect, useState } from 'react';
 import LottieIcon from '../LottieIcon';
 import Member from './component/Member';
-import ModelAdd from './component/ModelAdd';
+import { ModelModal } from '@yokowu/modelkit-ui';
+import {
+  modelService,
+  modelkitModelTypeToLocal,
+  convertLocalModelToUIModel,
+} from '@/services/modelService';
 
 const System = () => {
   const theme = useTheme();
@@ -97,6 +102,7 @@ const System = () => {
         open={open}
         closable={!disabledClose}
         disableEscapeKeyDown={disabledClose}
+        disableEnforceFocus={true}
         footer={null}
         onCancel={() => setOpen(false)}
       >
@@ -603,18 +609,21 @@ const System = () => {
           </Card>
         </Stack>
       </Modal>
-      <ModelAdd
+      <ModelModal
         open={addOpen}
-        type={addType}
+        model_type={addType}
         data={
           addType === 'chat'
-            ? chatModelData
+            ? convertLocalModelToUIModel(chatModelData)
             : addType === 'embedding'
-              ? embeddingModelData
-              : rerankModelData
+              ? convertLocalModelToUIModel(embeddingModelData)
+              : convertLocalModelToUIModel(rerankModelData)
         }
         onClose={() => setAddOpen(false)}
         refresh={getModel}
+        modelService={modelService}
+        language='zh-CN'
+        messageComponent={Message}
       />
     </>
   );

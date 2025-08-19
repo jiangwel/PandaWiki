@@ -12,16 +12,17 @@
 
 import httpRequest, { ContentType, RequestParams } from "./httpClient";
 import {
-  DomainCheckModelReq,
-  DomainCheckModelResp,
   DomainCreateModelReq,
   DomainGetProviderModelListResp,
   DomainModelDetailResp,
-  DomainModelListItem,
+  DomainPWResponse,
   DomainResponse,
   DomainUpdateModelReq,
   GetApiV1ModelDetailParams,
   GetApiV1ModelProviderSupportedParams,
+  GithubComChaitinPandaWikiDomainCheckModelReq,
+  GithubComChaitinPandaWikiDomainCheckModelResp,
+  GithubComChaitinPandaWikiDomainModelListItem,
 } from "./types";
 
 /**
@@ -76,19 +77,19 @@ export const postApiV1Model = (
  * @name PostApiV1ModelCheck
  * @summary check model
  * @request POST:/api/v1/model/check
- * @response `200` `(DomainResponse & {
-    data?: DomainCheckModelResp,
+ * @response `200` `(DomainPWResponse & {
+    data?: GithubComChaitinPandaWikiDomainCheckModelResp,
 
 })` OK
  */
 
 export const postApiV1ModelCheck = (
-  model: DomainCheckModelReq,
+  model: GithubComChaitinPandaWikiDomainCheckModelReq,
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
-      data?: DomainCheckModelResp;
+    DomainPWResponse & {
+      data?: GithubComChaitinPandaWikiDomainCheckModelResp;
     }
   >({
     path: `/api/v1/model/check`,
@@ -106,7 +107,7 @@ export const postApiV1ModelCheck = (
  * @name GetApiV1ModelDetail
  * @summary get model detail
  * @request GET:/api/v1/model/detail
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: DomainModelDetailResp,
 
 })` OK
@@ -117,7 +118,7 @@ export const getApiV1ModelDetail = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainModelDetailResp;
     }
   >({
@@ -136,16 +137,16 @@ export const getApiV1ModelDetail = (
  * @name GetApiV1ModelList
  * @summary get model list
  * @request GET:/api/v1/model/list
- * @response `200` `(DomainResponse & {
-    data?: DomainModelListItem,
+ * @response `200` `(DomainPWResponse & {
+    data?: GithubComChaitinPandaWikiDomainModelListItem,
 
 })` OK
  */
 
 export const getApiV1ModelList = (params: RequestParams = {}) =>
   httpRequest<
-    DomainResponse & {
-      data?: DomainModelListItem;
+    DomainPWResponse & {
+      data?: GithubComChaitinPandaWikiDomainModelListItem;
     }
   >({
     path: `/api/v1/model/list`,
@@ -162,7 +163,7 @@ export const getApiV1ModelList = (params: RequestParams = {}) =>
  * @name GetApiV1ModelProviderSupported
  * @summary get provider supported model list
  * @request GET:/api/v1/model/provider/supported
- * @response `200` `(DomainResponse & {
+ * @response `200` `(DomainPWResponse & {
     data?: DomainGetProviderModelListResp,
 
 })` OK
@@ -173,7 +174,7 @@ export const getApiV1ModelProviderSupported = (
   params: RequestParams = {},
 ) =>
   httpRequest<
-    DomainResponse & {
+    DomainPWResponse & {
       data?: DomainGetProviderModelListResp;
     }
   >({
