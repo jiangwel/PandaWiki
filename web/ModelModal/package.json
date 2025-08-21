@@ -29,7 +29,8 @@
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
     "clean": "rimraf dist",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "icon": "node ./scripts/downLoadIcon.cjs"
   },
   "keywords": [
     "react",

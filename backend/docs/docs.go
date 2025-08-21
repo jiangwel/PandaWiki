@@ -168,7 +168,6 @@ const docTemplate = `{
                             1
                         ],
                         "type": "integer",
-                        "format": "int32",
                         "x-enum-varnames": [
                             "CommentStatusReject",
                             "CommentStatusPending",
@@ -1883,20 +1882,6 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "enum": [
-                            "SiliconFlow",
-                            "OpenAI",
-                            "Ollama",
-                            "DeepSeek",
-                            "Moonshot",
-                            "AzureOpenAI",
-                            "BaiZhiCloud",
-                            "Hunyuan",
-                            "BaiLian",
-                            "Volcengine",
-                            "Gemini",
-                            "ZhiPu"
-                        ],
                         "type": "string",
                         "name": "provider",
                         "in": "query",
@@ -3326,12 +3311,6 @@ const docTemplate = `{
                 "UserKBPermissionFullControl": "完全控制",
                 "UserKBPermissionNull": "无权限"
             },
-            "x-enum-descriptions": [
-                "无权限",
-                "完全控制",
-                "文档管理",
-                "数据运营"
-            ],
             "x-enum-varnames": [
                 "UserKBPermissionNull",
                 "UserKBPermissionFullControl",
@@ -3349,10 +3328,6 @@ const docTemplate = `{
                 "UserRoleAdmin": "管理员",
                 "UserRoleUser": "普通用户"
             },
-            "x-enum-descriptions": [
-                "管理员",
-                "普通用户"
-            ],
             "x-enum-varnames": [
                 "UserRoleAdmin",
                 "UserRoleUser"
@@ -3854,7 +3829,6 @@ const docTemplate = `{
         },
         "domain.AppType": {
             "type": "integer",
-            "format": "int32",
             "enum": [
                 1,
                 2,
@@ -3910,11 +3884,6 @@ const docTemplate = `{
                 "AuthTypeNull": "无认证",
                 "AuthTypeSimple": "简单口令"
             },
-            "x-enum-descriptions": [
-                "无认证",
-                "简单口令",
-                "企业认证"
-            ],
             "x-enum-varnames": [
                 "AuthTypeNull",
                 "AuthTypeSimple",
@@ -4095,7 +4064,6 @@ const docTemplate = `{
         },
         "domain.CommentStatus": {
             "type": "integer",
-            "format": "int32",
             "enum": [
                 -1,
                 0,
@@ -4406,27 +4374,11 @@ const docTemplate = `{
                 "model": {
                     "type": "string"
                 },
+                "param": {
+                    "$ref": "#/definitions/domain.ModelParam"
+                },
                 "provider": {
-                    "enum": [
-                        "OpenAI",
-                        "Ollama",
-                        "DeepSeek",
-                        "SiliconFlow",
-                        "Moonshot",
-                        "Other",
-                        "AzureOpenAI",
-                        "BaiZhiCloud",
-                        "Hunyuan",
-                        "BaiLian",
-                        "Volcengine",
-                        "Gemini",
-                        "ZhiPu"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_chaitin_panda-wiki_domain.ModelProvider"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_chaitin_panda-wiki_domain.ModelProvider"
                 },
                 "type": {
                     "enum": [
@@ -4826,6 +4778,9 @@ const docTemplate = `{
                 "model": {
                     "type": "string"
                 },
+                "param": {
+                    "$ref": "#/definitions/domain.ModelParam"
+                },
                 "prompt_tokens": {
                     "type": "integer"
                 },
@@ -4840,6 +4795,29 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "domain.ModelParam": {
+            "type": "object",
+            "properties": {
+                "context_window": {
+                    "type": "integer"
+                },
+                "max_tokens": {
+                    "type": "integer"
+                },
+                "r1_enabled": {
+                    "type": "boolean"
+                },
+                "support_computer_use": {
+                    "type": "boolean"
+                },
+                "support_images": {
+                    "type": "boolean"
+                },
+                "support_prompt_cache": {
+                    "type": "boolean"
                 }
             }
         },
@@ -4992,7 +4970,6 @@ const docTemplate = `{
         },
         "domain.NodeStatus": {
             "type": "integer",
-            "format": "int32",
             "enum": [
                 1,
                 2
@@ -5022,7 +4999,6 @@ const docTemplate = `{
         },
         "domain.NodeType": {
             "type": "integer",
-            "format": "int32",
             "enum": [
                 1,
                 2
@@ -5034,7 +5010,6 @@ const docTemplate = `{
         },
         "domain.NodeVisibility": {
             "type": "integer",
-            "format": "int32",
             "enum": [
                 1,
                 2
@@ -5544,27 +5519,11 @@ const docTemplate = `{
                 "model": {
                     "type": "string"
                 },
+                "param": {
+                    "$ref": "#/definitions/domain.ModelParam"
+                },
                 "provider": {
-                    "enum": [
-                        "OpenAI",
-                        "Ollama",
-                        "DeepSeek",
-                        "SiliconFlow",
-                        "Moonshot",
-                        "Other",
-                        "AzureOpenAI",
-                        "BaiZhiCloud",
-                        "Hunyuan",
-                        "BaiLian",
-                        "Volcengine",
-                        "Gemini",
-                        "ZhiPu"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_chaitin_panda-wiki_domain.ModelProvider"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_chaitin_panda-wiki_domain.ModelProvider"
                 },
                 "type": {
                     "enum": [
@@ -5730,26 +5689,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "provider": {
-                    "enum": [
-                        "OpenAI",
-                        "Ollama",
-                        "DeepSeek",
-                        "SiliconFlow",
-                        "Moonshot",
-                        "Other",
-                        "AzureOpenAI",
-                        "BaiZhiCloud",
-                        "Hunyuan",
-                        "BaiLian",
-                        "Volcengine",
-                        "Gemini",
-                        "ZhiPu"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_chaitin_panda-wiki_domain.ModelProvider"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_chaitin_panda-wiki_domain.ModelProvider"
                 },
                 "type": {
                     "enum": [
@@ -5801,6 +5741,9 @@ const docTemplate = `{
                 "model": {
                     "type": "string"
                 },
+                "param": {
+                    "$ref": "#/definitions/domain.ModelParam"
+                },
                 "prompt_tokens": {
                     "type": "integer"
                 },
@@ -5835,21 +5778,6 @@ const docTemplate = `{
             "x-enum-comments": {
                 "ModelProviderBrandZhiPu": "智谱"
             },
-            "x-enum-descriptions": [
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "智谱",
-                ""
-            ],
             "x-enum-varnames": [
                 "ModelProviderBrandOpenAI",
                 "ModelProviderBrandOllama",

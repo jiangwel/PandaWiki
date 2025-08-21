@@ -61,10 +61,8 @@ type Model struct {
 // ToModelkitModel converts domain.Model to modelkitDomain.PandaModel
 func (m *Model) ToModelkitModel() (*modelkitDomain.ModelMetadata, error) {
 	provider := modelkitConsts.ParseModelProvider(string(m.Provider))
-	modelType, err := modelkitConsts.ParseModelType(string(m.Type))
-	if err != nil {
-		return nil, err
-	}
+	modelType := modelkitConsts.ParseModelType(string(m.Type))
+
 	return &modelkitDomain.ModelMetadata{
 		Provider:   provider,
 		ModelName:  m.Model,
@@ -144,7 +142,7 @@ func (p *ModelParam) Scan(value interface{}) error {
 }
 
 type BaseModelInfo struct {
-	Provider   ModelProvider `json:"provider" validate:"required,oneof=OpenAI Ollama DeepSeek SiliconFlow Moonshot Other AzureOpenAI BaiZhiCloud Hunyuan BaiLian Volcengine Gemini ZhiPu"`
+	Provider   ModelProvider `json:"provider" validate:"required"`
 	Model      string        `json:"model" validate:"required"`
 	BaseURL    string        `json:"base_url" validate:"required"`
 	APIKey     string        `json:"api_key"`
@@ -159,7 +157,7 @@ type CheckModelResp struct {
 }
 
 type GetProviderModelListReq struct {
-	Provider  string    `json:"provider" query:"provider" validate:"required,oneof=SiliconFlow OpenAI Ollama DeepSeek Moonshot AzureOpenAI BaiZhiCloud Hunyuan BaiLian Volcengine Gemini ZhiPu"`
+	Provider  string    `json:"provider" query:"provider" validate:"required"`
 	BaseURL   string    `json:"base_url" query:"base_url" validate:"required"`
 	APIKey    string    `json:"api_key" query:"api_key"`
 	APIHeader string    `json:"api_header" query:"api_header"`
