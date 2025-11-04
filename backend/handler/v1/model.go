@@ -40,6 +40,7 @@ func NewModelHandler(echo *echo.Echo, baseHandler *handler.BaseHandler, logger *
 	group.POST("/check", handler.CheckModel)
 	group.POST("/provider/supported", handler.GetProviderSupportedModelList)
 	group.PUT("", handler.UpdateModel)
+	group.POST("/switch-mode", handler.SwitchMode)
 
 	return handler
 }
@@ -210,4 +211,34 @@ func (h *ModelHandler) GetProviderSupportedModelList(c echo.Context) error {
 		return h.NewResponseWithError(c, "get user model list failed", err)
 	}
 	return h.NewResponseWithData(c, models)
+}
+
+// switch mode
+//
+//	@Summary		switch mode
+//	@Description	switch model mode between manual and auto
+//	@Tags			model
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		domain.SwitchModeReq	true	"switch mode request"
+//	@Success		200		{object}	domain.Response{data=domain.SwitchModeResp}
+//	@Router			/api/v1/model/switch-mode [post]
+func (h *ModelHandler) SwitchMode(c echo.Context) error {
+	var req domain.SwitchModeReq
+	if err := c.Bind(&req); err != nil {
+		return h.NewResponseWithError(c, "bind request failed", err)
+	}
+	if err := c.Validate(&req); err != nil {
+		return h.NewResponseWithError(c, "validate request failed", err)
+	}
+	ctx := c.Request().Context()
+
+	if err := h.usecase.SwitchMode(ctx, &req); err != nil {
+		return h.NewResponseWithError(c, "模式切换失败", err)
+	}
+
+	resp := &domain.SwitchModeResp{
+		Message: "模式切换成功",
+	}
+	return h.NewResponseWithData(c, resp)
 }

@@ -165,3 +165,11 @@ type ProviderModelListItem struct {
 type ActivateModelReq struct {
 	ModelID string `json:"model_id" validate:"required"`
 }
+
+type SwitchModeReq struct {
+	Mode string `json:"mode" validate:"required,oneof=manual auto"`
+}
+
+type SwitchModeResp struct {
+	Message string `json:"message"`
+}

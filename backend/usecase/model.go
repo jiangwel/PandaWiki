@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/chaitin/panda-wiki/config"
+	"github.com/chaitin/panda-wiki/consts"
 	"github.com/chaitin/panda-wiki/domain"
 	"github.com/chaitin/panda-wiki/log"
 	"github.com/chaitin/panda-wiki/repo/mq"
@@ -18,24 +20,26 @@ import (
 )
 
 type ModelUsecase struct {
-	modelRepo *pg.ModelRepository
-	logger    *log.Logger
-	config    *config.Config
-	nodeRepo  *pg.NodeRepository
-	ragRepo   *mq.RAGRepository
-	ragStore  rag.RAGService
-	kbRepo    *pg.KnowledgeBaseRepository
+	modelRepo   *pg.ModelRepository
+	logger      *log.Logger
+	config      *config.Config
+	nodeRepo    *pg.NodeRepository
+	ragRepo     *mq.RAGRepository
+	ragStore    rag.RAGService
+	kbRepo      *pg.KnowledgeBaseRepository
+	settingRepo *pg.SettingRepository
 }
 
-func NewModelUsecase(modelRepo *pg.ModelRepository, nodeRepo *pg.NodeRepository, ragRepo *mq.RAGRepository, ragStore rag.RAGService, logger *log.Logger, config *config.Config, kbRepo *pg.KnowledgeBaseRepository) *ModelUsecase {
+func NewModelUsecase(modelRepo *pg.ModelRepository, nodeRepo *pg.NodeRepository, ragRepo *mq.RAGRepository, ragStore rag.RAGService, logger *log.Logger, config *config.Config, kbRepo *pg.KnowledgeBaseRepository, settingRepo *pg.SettingRepository) *ModelUsecase {
 	u := &ModelUsecase{
-		modelRepo: modelRepo,
-		logger:    logger.WithModule("usecase.model"),
-		config:    config,
-		nodeRepo:  nodeRepo,
-		ragRepo:   ragRepo,
-		ragStore:  ragStore,
-		kbRepo:    kbRepo,
+		modelRepo:   modelRepo,
+		logger:      logger.WithModule("usecase.model"),
+		config:      config,
+		nodeRepo:    nodeRepo,
+		ragRepo:     ragRepo,
+		ragStore:    ragStore,
+		kbRepo:      kbRepo,
+		settingRepo: settingRepo,
 	}
 	if err := u.initEmbeddingAndRerankModel(context.Background()); err != nil {
 		logger.Error("init embedding & rerank & analysis model failed", log.Any("error", err))
@@ -224,4 +228,95 @@ func (u *ModelUsecase) GetModelByType(ctx context.Context, modelType domain.Mode
 
 func (u *ModelUsecase) UpdateUsage(ctx context.Context, modelID string, usage *schema.TokenUsage) error {
 	return u.modelRepo.UpdateUsage(ctx, modelID, usage)
+}
+
+func (u *ModelUsecase) SwitchMode(ctx context.Context, req *domain.SwitchModeReq) error {
+	// 获取当前的模式设置
+	setting, err := u.settingRepo.GetSetting(ctx, "", domain.SettingModelMode)
+	if err != nil {
+		return fmt.Errorf("failed to get current mode setting: %w", err)
+	}
+
+	// 解析当前设置的JSON值
+	var currentConfig map[string]interface{}
+	if err := json.Unmarshal(setting.Value, &currentConfig); err != nil {
+		return fmt.Errorf("failed to parse current mode setting: %w", err)
+	}
+
+	if req.Mode == currentConfig["mode"] {
+		return nil
+	}
+
+	// 更新模式
+	currentConfig["mode"] = req.Mode
+
+	// 将更新后的配置转换为JSON字符串
+	updatedValue, err := json.Marshal(currentConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated mode setting: %w", err)
+	}
+
+	// 更新设置
+	if err := u.settingRepo.UpdateSetting(ctx, "", domain.SettingModelMode, string(updatedValue)); err != nil {
+		return fmt.Errorf("failed to update mode setting: %w", err)
+	}
+
+	// 根据模式更新RAG模型
+	ragModelTypes := []domain.ModelType{
+		domain.ModelTypeEmbedding,
+		domain.ModelTypeRerank,
+		domain.ModelTypeAnalysis,
+		domain.ModelTypeAnalysisVL,
+	}
+
+	var hasEmbeddingModel bool
+	for _, modelType := range ragModelTypes {
+		var model *domain.Model
+
+		if req.Mode == string(consts.ModelSettingModeManual) {
+			// 获取该类型的活跃模型
+			model, err := u.modelRepo.GetModelByType(ctx, modelType)
+			if err != nil {
+				u.logger.Warn("failed to get model by type", log.String("type", string(modelType)), log.Any("error", err))
+				continue
+			}
+
+			if model == nil || !model.IsActive {
+				u.logger.Warn("no active model found for type", log.String("type", string(modelType)))
+				continue
+			}
+		} else {
+			modelName := consts.GetBaiZhiDefaultModel(string(modelType))
+			// 对话模型支持用户设置
+			if modelType == domain.ModelTypeChat && currentConfig["chat_model"] != "" {
+				modelName = currentConfig["chat_model"].(string)
+			}
+			model = &domain.Model{
+				Model:    modelName,
+				Type:     modelType,
+				IsActive: true,
+				BaseURL:  "https://model-square.app.baizhi.cloud",
+				APIKey:   currentConfig["baizhicloud_api_key"].(string),
+				Provider: domain.ModelProviderBrandBaiZhiCloud,
+			}
+		}
+
+		// 更新RAG存储中的模型
+		if err := u.ragStore.UpdateModel(ctx, model); err != nil {
+			u.logger.Error("failed to update model in RAG store", log.String("model_id", model.ID), log.String("type", string(modelType)), log.Any("error", err))
+			return fmt.Errorf("failed to update %s model in RAG store: %w", modelType, err)
+		}
+
+		// 检查是否有嵌入模型
+		if modelType == domain.ModelTypeEmbedding {
+			hasEmbeddingModel = true
+		}
+	}
+
+	// 如果有嵌入模型，触发记录更新
+	if hasEmbeddingModel {
+		return u.TriggerUpsertRecords(ctx)
+	}
+
+	return nil
 }
