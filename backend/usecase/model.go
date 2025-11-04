@@ -219,7 +219,33 @@ func (u *ModelUsecase) Update(ctx context.Context, req *domain.UpdateModelReq) e
 }
 
 func (u *ModelUsecase) GetChatModel(ctx context.Context) (*domain.Model, error) {
-	return u.modelRepo.GetChatModel(ctx)
+	var model *domain.Model
+	modelModeSetting, err := u.GetModelModeSetting(ctx)
+	// 获取不到模型模式时，使用手动模式
+	if err != nil {
+		u.logger.Error("get model mode setting failed, use manual mode", log.Error(err))
+	}
+	if err == nil && modelModeSetting.Mode == string(consts.ModelSettingModeAuto) {
+		modelName := modelModeSetting.ChatModel
+		if modelName == "" {
+			modelName = string(consts.AutoModeDefaultChatModel)
+		}
+		model = &domain.Model{
+			Model:    modelName,
+			Type:     domain.ModelTypeChat,
+			IsActive: true,
+			BaseURL:  "https://model-square.app.baizhi.cloud/v1",
+			APIKey:   modelModeSetting.AutoModeAPIKey,
+			Provider: domain.ModelProviderBrandBaiZhiCloud,
+		}
+		return model, nil
+	}
+	model, err = u.modelRepo.GetChatModel(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }
 
 func (u *ModelUsecase) GetModelByType(ctx context.Context, modelType domain.ModelType) (*domain.Model, error) {
@@ -238,20 +264,20 @@ func (u *ModelUsecase) SwitchMode(ctx context.Context, req *domain.SwitchModeReq
 	}
 
 	// 解析当前设置的JSON值
-	var currentConfig map[string]interface{}
-	if err := json.Unmarshal(setting.Value, &currentConfig); err != nil {
+	var config domain.ModelModeSetting
+	if err := json.Unmarshal(setting.Value, &config); err != nil {
 		return fmt.Errorf("failed to parse current mode setting: %w", err)
 	}
 
-	if req.Mode == currentConfig["mode"] {
+	if req.Mode == config.Mode {
 		return nil
 	}
 
 	// 更新模式
-	currentConfig["mode"] = req.Mode
+	config.Mode = req.Mode
 
 	// 将更新后的配置转换为JSON字符串
-	updatedValue, err := json.Marshal(currentConfig)
+	updatedValue, err := json.Marshal(config)
 	if err != nil {
 		return fmt.Errorf("failed to marshal updated mode setting: %w", err)
 	}
@@ -287,15 +313,15 @@ func (u *ModelUsecase) SwitchMode(ctx context.Context, req *domain.SwitchModeReq
 		} else {
 			modelName := consts.GetAutoModeDefaultModel(string(modelType))
 			// 对话模型支持用户设置
-			if modelType == domain.ModelTypeChat && currentConfig["chat_model"] != "" {
-				modelName = currentConfig["chat_model"].(string)
+			if modelType == domain.ModelTypeChat && config.ChatModel != "" {
+				modelName = config.ChatModel
 			}
 			model = &domain.Model{
 				Model:    modelName,
 				Type:     modelType,
 				IsActive: true,
 				BaseURL:  "https://model-square.app.baizhi.cloud/v1",
-				APIKey:   currentConfig["auto_mode_api_key"].(string),
+				APIKey:   config.AutoModeAPIKey,
 				Provider: domain.ModelProviderBrandBaiZhiCloud,
 			}
 		}
@@ -329,17 +355,17 @@ func (u *ModelUsecase) UpdateAutoModelSetting(ctx context.Context, req *domain.U
 		return fmt.Errorf("failed to get current model setting: %w", err)
 	}
 
-	var currentConfig map[string]interface{}
-	if err := json.Unmarshal(setting.Value, &currentConfig); err != nil {
+	var config domain.ModelModeSetting
+	if err := json.Unmarshal(setting.Value, &config); err != nil {
 		return fmt.Errorf("failed to parse current model setting: %w", err)
 	}
 
-	// 更新 API Key
-	currentConfig["auto_mode_api_key"] = req.APIKey
-	currentConfig["chat_model"] = req.ChatModel
+	// 更新设置
+	config.AutoModeAPIKey = req.APIKey
+	config.ChatModel = req.ChatModel
 
 	// 持久化设置
-	updatedValue, err := json.Marshal(currentConfig)
+	updatedValue, err := json.Marshal(config)
 	if err != nil {
 		return fmt.Errorf("failed to marshal updated model setting: %w", err)
 	}
@@ -378,4 +404,20 @@ func (u *ModelUsecase) UpdateAutoModelSetting(ctx context.Context, req *domain.U
 	}
 
 	return nil
+}
+
+func (u *ModelUsecase) GetModelModeSetting(ctx context.Context) (domain.ModelModeSetting, error) {
+	setting, err := u.settingRepo.GetModelModeSetting(ctx)
+	if err != nil {
+		return domain.ModelModeSetting{}, fmt.Errorf("failed to get model mode setting: %w", err)
+	}
+	var config domain.ModelModeSetting
+	if err := json.Unmarshal(setting.Value, &config); err != nil {
+		return domain.ModelModeSetting{}, fmt.Errorf("failed to parse model mode setting: %w", err)
+	}
+	// 无效设置检查
+	if config == (domain.ModelModeSetting{}) || config.Mode == "" || config.AutoModeAPIKey == "" {
+		return domain.ModelModeSetting{}, fmt.Errorf("model mode setting is invalid")
+	}
+	return config, nil
 }

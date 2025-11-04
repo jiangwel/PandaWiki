@@ -26,16 +26,17 @@ import (
 )
 
 type NodeUsecase struct {
-	nodeRepo   *pg.NodeRepository
-	appRepo    *pg.AppRepository
-	ragRepo    *mq.RAGRepository
-	kbRepo     *pg.KnowledgeBaseRepository
-	modelRepo  *pg.ModelRepository
-	authRepo   *pg.AuthRepo
-	llmUsecase *LLMUsecase
-	logger     *log.Logger
-	s3Client   *s3.MinioClient
-	rAGService rag.RAGService
+	nodeRepo     *pg.NodeRepository
+	appRepo      *pg.AppRepository
+	ragRepo      *mq.RAGRepository
+	kbRepo       *pg.KnowledgeBaseRepository
+	modelRepo    *pg.ModelRepository
+	authRepo     *pg.AuthRepo
+	llmUsecase   *LLMUsecase
+	logger       *log.Logger
+	s3Client     *s3.MinioClient
+	rAGService   rag.RAGService
+	modelUsecase *ModelUsecase
 }
 
 func NewNodeUsecase(
@@ -49,18 +50,20 @@ func NewNodeUsecase(
 	s3Client *s3.MinioClient,
 	modelRepo *pg.ModelRepository,
 	authRepo *pg.AuthRepo,
+	modelUsecase *ModelUsecase,
 ) *NodeUsecase {
 	return &NodeUsecase{
-		nodeRepo:   nodeRepo,
-		rAGService: ragService,
-		appRepo:    appRepo,
-		ragRepo:    ragRepo,
-		kbRepo:     kbRepo,
-		authRepo:   authRepo,
-		llmUsecase: llmUsecase,
-		modelRepo:  modelRepo,
-		logger:     logger.WithModule("usecase.node"),
-		s3Client:   s3Client,
+		nodeRepo:     nodeRepo,
+		rAGService:   ragService,
+		appRepo:      appRepo,
+		ragRepo:      ragRepo,
+		kbRepo:       kbRepo,
+		authRepo:     authRepo,
+		llmUsecase:   llmUsecase,
+		modelRepo:    modelRepo,
+		logger:       logger.WithModule("usecase.node"),
+		s3Client:     s3Client,
+		modelUsecase: modelUsecase,
 	}
 }
 
@@ -191,7 +194,7 @@ func (u *NodeUsecase) MoveNode(ctx context.Context, req *domain.MoveNodeReq) err
 }
 
 func (u *NodeUsecase) SummaryNode(ctx context.Context, req *domain.NodeSummaryReq) (string, error) {
-	model, err := u.modelRepo.GetChatModel(ctx)
+	model, err := u.modelUsecase.GetChatModel(ctx)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return "", domain.ErrModelNotConfigured

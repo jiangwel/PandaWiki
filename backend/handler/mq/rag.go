@@ -15,24 +15,25 @@ import (
 )
 
 type RAGMQHandler struct {
-	consumer   mq.MQConsumer
-	logger     *log.Logger
-	rag        rag.RAGService
-	nodeRepo   *pg.NodeRepository
-	kbRepo     *pg.KnowledgeBaseRepository
-	modelRepo  *pg.ModelRepository
-	llmUsecase *usecase.LLMUsecase
+	consumer     mq.MQConsumer
+	logger       *log.Logger
+	rag          rag.RAGService
+	nodeRepo     *pg.NodeRepository
+	kbRepo       *pg.KnowledgeBaseRepository
+	modelRepo    *pg.ModelRepository
+	llmUsecase   *usecase.LLMUsecase
+	modelUsecase *usecase.ModelUsecase
 }
 
 func NewRAGMQHandler(consumer mq.MQConsumer, logger *log.Logger, rag rag.RAGService, nodeRepo *pg.NodeRepository, kbRepo *pg.KnowledgeBaseRepository, llmUsecase *usecase.LLMUsecase, modelRepo *pg.ModelRepository) (*RAGMQHandler, error) {
 	h := &RAGMQHandler{
-		consumer:   consumer,
-		logger:     logger.WithModule("mq.rag"),
-		rag:        rag,
-		nodeRepo:   nodeRepo,
-		kbRepo:     kbRepo,
-		llmUsecase: llmUsecase,
-		modelRepo:  modelRepo,
+		consumer:          consumer,
+		logger:            logger.WithModule("mq.rag"),
+		rag:               rag,
+		nodeRepo:          nodeRepo,
+		kbRepo:            kbRepo,
+		llmUsecase:        llmUsecase,
+		modelRepo:         modelRepo,
 	}
 	if err := consumer.RegisterHandler(domain.VectorTaskTopic, h.HandleNodeContentVectorRequest); err != nil {
 		return nil, err
@@ -134,11 +135,13 @@ func (h *RAGMQHandler) HandleNodeContentVectorRequest(ctx context.Context, msg t
 			h.logger.Info("node is folder, skip summary", log.Any("node_id", request.NodeID))
 			return nil
 		}
-		model, err := h.modelRepo.GetChatModel(ctx)
+
+		model, err := h.modelUsecase.GetChatModel(ctx)
 		if err != nil {
 			h.logger.Error("get chat model failed", log.Error(err))
 			return nil
 		}
+
 		summary, err := h.llmUsecase.SummaryNode(ctx, model, node.Name, node.Content)
 		if err != nil {
 			h.logger.Error("summary node content failed", log.Error(err))
