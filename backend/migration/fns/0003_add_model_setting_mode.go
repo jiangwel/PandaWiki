@@ -28,9 +28,9 @@ func (m *MigrationAddModelSettingMode) Execute(tx *gorm.DB) error {
 
 	// 定义model_setting_mode的值结构
 	modelSettingValue := map[string]interface{}{
-		"mode":                  "manual", // 默认为自定义模式
-		"baizhicloud_api_key":   "",       // 默认没有api key
-		"chat_model":            "",       // 对话模型，默认为空
+		"mode":       "manual", // 默认为自定义模式
+		"auto_mode_api_key":    "",       // 默认没有api key
+		"chat_model": "",       // 对话模型，默认为空
 	}
 
 	// 将值转换为JSON字节数组

@@ -266,7 +266,6 @@ func (u *ModelUsecase) SwitchMode(ctx context.Context, req *domain.SwitchModeReq
 		domain.ModelTypeEmbedding,
 		domain.ModelTypeRerank,
 		domain.ModelTypeAnalysis,
-		domain.ModelTypeAnalysisVL,
 	}
 
 	var hasEmbeddingModel bool
@@ -286,7 +285,7 @@ func (u *ModelUsecase) SwitchMode(ctx context.Context, req *domain.SwitchModeReq
 				continue
 			}
 		} else {
-			modelName := consts.GetBaiZhiDefaultModel(string(modelType))
+			modelName := consts.GetAutoModeDefaultModel(string(modelType))
 			// 对话模型支持用户设置
 			if modelType == domain.ModelTypeChat && currentConfig["chat_model"] != "" {
 				modelName = currentConfig["chat_model"].(string)
@@ -295,8 +294,8 @@ func (u *ModelUsecase) SwitchMode(ctx context.Context, req *domain.SwitchModeReq
 				Model:    modelName,
 				Type:     modelType,
 				IsActive: true,
-				BaseURL:  "https://model-square.app.baizhi.cloud",
-				APIKey:   currentConfig["baizhicloud_api_key"].(string),
+				BaseURL:  "https://model-square.app.baizhi.cloud/v1",
+				APIKey:   currentConfig["auto_mode_api_key"].(string),
 				Provider: domain.ModelProviderBrandBaiZhiCloud,
 			}
 		}
@@ -314,6 +313,66 @@ func (u *ModelUsecase) SwitchMode(ctx context.Context, req *domain.SwitchModeReq
 	}
 
 	// 如果有嵌入模型，触发记录更新
+	if hasEmbeddingModel {
+		return u.TriggerUpsertRecords(ctx)
+	}
+
+	return nil
+}
+
+// UpdateAutoModelSetting 更新百智云模型设置（API Key 与可选的 Chat 模型）
+func (u *ModelUsecase) UpdateAutoModelSetting(ctx context.Context, req *domain.UpdateAutoModelSettingReq) error {
+
+	// 读取当前设置
+	setting, err := u.settingRepo.GetModelModeSetting(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get current model setting: %w", err)
+	}
+
+	var currentConfig map[string]interface{}
+	if err := json.Unmarshal(setting.Value, &currentConfig); err != nil {
+		return fmt.Errorf("failed to parse current model setting: %w", err)
+	}
+
+	// 更新 API Key
+	currentConfig["auto_mode_api_key"] = req.APIKey
+	currentConfig["chat_model"] = req.ChatModel
+
+	// 持久化设置
+	updatedValue, err := json.Marshal(currentConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated model setting: %w", err)
+	}
+	if err := u.settingRepo.UpdateModelModeSetting(ctx, string(updatedValue)); err != nil {
+		return fmt.Errorf("failed to update model setting: %w", err)
+	}
+
+	// 更新 RAG 模型（embedding、rerank、analysis）
+	ragModelTypes := []domain.ModelType{
+		domain.ModelTypeEmbedding,
+		domain.ModelTypeRerank,
+		domain.ModelTypeAnalysis,
+	}
+
+	var hasEmbeddingModel bool
+	for _, modelType := range ragModelTypes {
+		modelName := consts.GetAutoModeDefaultModel(string(modelType))
+		model := &domain.Model{
+			Model:    modelName,
+			Type:     modelType,
+			IsActive: true,
+			BaseURL:  "https://model-square.app.baizhi.cloud/v1",
+			APIKey:   req.APIKey,
+			Provider: domain.ModelProviderBrandBaiZhiCloud,
+		}
+		if err := u.ragStore.UpdateModel(ctx, model); err != nil {
+			u.logger.Error("failed to update model in RAG store", log.String("type", string(modelType)), log.Any("error", err))
+			return fmt.Errorf("failed to update %s model in RAG store: %w", modelType, err)
+		}
+		if modelType == domain.ModelTypeEmbedding {
+			hasEmbeddingModel = true
+		}
+	}
 	if hasEmbeddingModel {
 		return u.TriggerUpsertRecords(ctx)
 	}

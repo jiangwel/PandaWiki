@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 )
 
@@ -19,4 +20,10 @@ type Setting struct {
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type SettingRepo interface {
+	CreateSetting(ctx context.Context, setting *Setting) error
+	GetSetting(ctx context.Context, kbID, key string) (*Setting, error)
+	UpdateSetting(ctx context.Context, kbID, key, value string) error
 }

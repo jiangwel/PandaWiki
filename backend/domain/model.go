@@ -173,3 +173,11 @@ type SwitchModeReq struct {
 type SwitchModeResp struct {
 	Message string `json:"message"`
 }
+
+// UpdateAutoModelSettingReq 更新百智云模型配置
+type UpdateAutoModelSettingReq struct {
+	// APIKey 百智云 API 密钥
+	APIKey string `json:"APIKey" validate:"required"`
+	// ChatModel 对话模型，允许为空表示清空为默认
+	ChatModel string `json:"ChatModel"`
+}

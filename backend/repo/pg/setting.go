@@ -38,6 +38,20 @@ func (r *SettingRepository) GetSetting(ctx context.Context, kbID, key string) (*
 	return &setting, nil
 }
 
+func (r *SettingRepository) GetModelModeSetting(ctx context.Context) (*domain.Setting, error) {
+	var setting domain.Setting
+	result := r.db.WithContext(ctx).Where("key = model_setting_mode").First(&setting)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &setting, nil
+}
+
 func (r *SettingRepository) UpdateSetting(ctx context.Context, kbID, key, value string) error {
 	return r.db.WithContext(ctx).Model(&domain.Setting{}).Where("kb_id = ? AND key = ?", kbID, key).Update("value", value).Error
+}
+
+func (r *SettingRepository) UpdateModelModeSetting(ctx context.Context, value string) error {
+	return r.db.WithContext(ctx).Model(&domain.Setting{}).Where("key = model_setting_mode").Update("value", value).Error
 }

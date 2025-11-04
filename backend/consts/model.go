@@ -1,29 +1,29 @@
 package consts
 
-type BaiZhiCloudDefaultModel string
+type AutoModeDefaultModel string
 
 const (
-	BaiZhiCloudDefaultChatModel       BaiZhiCloudDefaultModel = "deepseek-v3.1"
-	BaiZhiCloudDefaultEmbeddingModel  BaiZhiCloudDefaultModel = "bge-m3"
-	BaiZhiCloudDefaultRerankModel     BaiZhiCloudDefaultModel = "bge-reranker-v2-m3"
-	BaiZhiCloudDefaultAnalysisModel   BaiZhiCloudDefaultModel = "deepseek-v3.1"
-	BaiZhiCloudDefaultAnalysisVLModel BaiZhiCloudDefaultModel = "qwen-vl-max-latest"
+	AutoModeDefaultChatModel       AutoModeDefaultModel = "deepseek-v3.1"
+	AutoModeDefaultEmbeddingModel  AutoModeDefaultModel = "bge-m3"
+	AutoModeDefaultRerankModel     AutoModeDefaultModel = "bge-reranker-v2-m3"
+	AutoModeDefaultAnalysisModel   AutoModeDefaultModel = "deepseek-v3.1"
+	AutoModeDefaultAnalysisVLModel AutoModeDefaultModel = "qwen-vl-max-latest"
 )
 
-func GetBaiZhiDefaultModel(modelType string) string {
+func GetAutoModeDefaultModel(modelType string) string {
 	switch modelType {
 	case "chat":
-		return string(BaiZhiCloudDefaultChatModel)
+		return string(AutoModeDefaultChatModel)
 	case "embedding":
-		return string(BaiZhiCloudDefaultEmbeddingModel)
+		return string(AutoModeDefaultEmbeddingModel)
 	case "rerank":
-		return string(BaiZhiCloudDefaultRerankModel)
+		return string(AutoModeDefaultRerankModel)
 	case "analysis":
-		return string(BaiZhiCloudDefaultAnalysisModel)
+		return string(AutoModeDefaultAnalysisModel)
 	case "analysis-vl":
-		return string(BaiZhiCloudDefaultAnalysisVLModel)
+		return string(AutoModeDefaultAnalysisVLModel)
 	default:
-		return string(BaiZhiCloudDefaultChatModel)
+		return string(AutoModeDefaultChatModel)
 	}
 }
 

@@ -41,6 +41,7 @@ func NewModelHandler(echo *echo.Echo, baseHandler *handler.BaseHandler, logger *
 	group.POST("/provider/supported", handler.GetProviderSupportedModelList)
 	group.PUT("", handler.UpdateModel)
 	group.POST("/switch-mode", handler.SwitchMode)
+	group.POST("/auto-mode", handler.UpdateAutoModelSetting)
 
 	return handler
 }
@@ -241,4 +242,46 @@ func (h *ModelHandler) SwitchMode(c echo.Context) error {
 		Message: "模式切换成功",
 	}
 	return h.NewResponseWithData(c, resp)
+}
+
+// update BaiZhiCloud model setting
+//
+//	@Summary		update BaiZhiCloud model setting
+//	@Description	update BaiZhiCloud API key and optional chat model
+//	@Tags			model
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body	domain.UpdateAutoModelSettingReq	true	"update BaiZhiCloud model setting request"
+//	@Success		200	{object}	domain.Response
+//	@Router			/api/v1/model/baizhicloud/setting [post]
+func (h *ModelHandler) UpdateAutoModelSetting(c echo.Context) error {
+	var req domain.UpdateAutoModelSettingReq
+	if err := c.Bind(&req); err != nil {
+		return h.NewResponseWithError(c, "bind request failed", err)
+	}
+	if err := c.Validate(&req); err != nil {
+		return h.NewResponseWithError(c, "validate request failed", err)
+	}
+
+	ctx := c.Request().Context()
+	modelName := req.ChatModel
+	if modelName == "" {
+		modelName = consts.GetAutoModeDefaultModel(string(domain.ModelTypeChat))
+	}
+	// 检查 API Key 是否有效
+	if _, err := h.modelkit.CheckModel(ctx, &modelkitDomain.CheckModelReq{
+		Provider:  string(domain.ModelProviderBrandBaiZhiCloud),
+		Model:     modelName,
+		BaseURL:   "https://model-square.app.baizhi.cloud/v1",
+		APIKey:    req.APIKey,
+		Type:      string(domain.ModelTypeChat),
+	}); err != nil {
+		return h.NewResponseWithError(c, "检查百智云模型 API Key 失败", err)
+	}
+
+	if err := h.usecase.UpdateAutoModelSetting(ctx, &req); err != nil {
+		return h.NewResponseWithError(c, "更新百智云模型设置失败", err)
+	}
+
+	return h.NewResponseWithData(c, nil)
 }
