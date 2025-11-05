@@ -10,6 +10,7 @@ import {
 import { useAppSelector, useAppDispatch } from '@/store';
 import { postApiV1KnowledgeBaseRelease } from '@/request/KnowledgeBase';
 import {
+  Step1Model,
   Step1Config,
   Step2Import,
   Step3Publish,
@@ -22,6 +23,7 @@ import dayjs from 'dayjs';
 // Remove interface as we're using Redux state
 
 const steps = [
+  '模型配置',
   '配置监听',
   '录入文档',
   '发布内容',
@@ -40,6 +42,7 @@ const CreateWikiModal = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [nodeIds, setNodeIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const Step1ModelRef = useRef<{ onSubmit: () => Promise<void> }>(null);
   const step1ConfigRef = useRef<{ onSubmit: () => Promise<void> }>(null);
   const step2ImportRef = useRef<{
     onSubmit: () => Promise<Record<'id', string>[]>;
@@ -66,7 +69,7 @@ const CreateWikiModal = () => {
   const handleNext = () => {
     if (activeStep === 0) {
       setLoading(true);
-      step1ConfigRef.current
+      Step1ModelRef.current
         ?.onSubmit?.()
         .then(() => {
           setActiveStep(prev => prev + 1);
@@ -75,6 +78,16 @@ const CreateWikiModal = () => {
           setLoading(false);
         });
     } else if (activeStep === 1) {
+      setLoading(true);
+      step1ConfigRef.current
+        ?.onSubmit?.()
+        .then(() => {
+          setActiveStep(prev => prev + 1);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else if (activeStep === 2) {
       setLoading(true);
       step2ImportRef.current
         ?.onSubmit?.()
@@ -85,15 +98,15 @@ const CreateWikiModal = () => {
         .finally(() => {
           setLoading(false);
         });
-    } else if (activeStep === 2) {
+    } else if (activeStep === 3) {
       setLoading(true);
       onPublish().finally(() => {
         setActiveStep(prev => prev + 1);
         setLoading(false);
       });
-    } else if (activeStep === 3) {
-      setActiveStep(prev => prev + 1);
     } else if (activeStep === 4) {
+      setActiveStep(prev => prev + 1);
+    } else if (activeStep === 5) {
       setLoading(true);
       step5DecorateRef.current
         ?.onSubmit?.()
@@ -103,7 +116,7 @@ const CreateWikiModal = () => {
         .finally(() => {
           setLoading(false);
         });
-    } else if (activeStep === 5) {
+    } else if (activeStep === 6) {
       onCancel();
     }
   };
@@ -117,16 +130,18 @@ const CreateWikiModal = () => {
   const renderStepContent = () => {
     switch (activeStep) {
       case 0:
-        return <Step1Config ref={step1ConfigRef} />;
+        return <Step1Model ref={Step1ModelRef} />;
       case 1:
-        return <Step2Import ref={step2ImportRef} />;
+        return <Step1Config ref={step1ConfigRef} />;
       case 2:
-        return <Step3Publish />;
+        return <Step2Import ref={step2ImportRef} />;
       case 3:
-        return <Step4Test />;
+        return <Step3Publish />;
       case 4:
-        return <Step5Decorate ref={step5DecorateRef} nodeIds={nodeIds} />;
+        return <Step4Test />;
       case 5:
+        return <Step5Decorate ref={step5DecorateRef} nodeIds={nodeIds} />;
+      case 6:
         return <Step6Complete />;
       default:
         return null;
