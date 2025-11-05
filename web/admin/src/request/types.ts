@@ -134,6 +134,25 @@ export enum ConstsSourceType {
   SourceTypeOpenAIAPI = "openai_api",
 }
 
+export enum ConstsNodeRagInfoStatus {
+  /** 等待基础处理 */
+  NodeRagStatusBasicPending = "BASIC_PENDING",
+  /** 正在进行基础处理（文本分割、向量化等） */
+  NodeRagStatusBasicRunning = "BASIC_RUNNING",
+  /** 基础处理失败 */
+  NodeRagStatusBasicFailed = "BASIC_FAILED",
+  /** 基础处理成功 */
+  NodeRagStatusBasicSucceeded = "BASIC_SUCCEEDED",
+  /** 基础处理完成，等待增强处理 */
+  NodeRagStatusEnhancePending = "ENHANCE_PENDING",
+  /** 正在进行增强处理（关键词提取等） */
+  NodeRagStatusEnhanceRunning = "ENHANCE_RUNNING",
+  /** 增强处理失败 */
+  NodeRagStatusEnhanceFailed = "ENHANCE_FAILED",
+  /** 增强处理成功 */
+  NodeRagStatusEnhanceSucceeded = "ENHANCE_SUCCEEDED",
+}
+
 export enum ConstsNodePermName {
   /** 导航内可见 */
   NodePermNameVisible = "visible",
@@ -937,6 +956,7 @@ export interface DomainNodeListItemResp {
   parent_id?: string;
   permissions?: DomainNodePermissions;
   position?: number;
+  rag_info?: DomainRagInfo;
   status?: DomainNodeStatus;
   summary?: string;
   type?: DomainNodeType;
@@ -1082,6 +1102,11 @@ export interface DomainProviderModelListItem {
   model?: string;
 }
 
+export interface DomainRagInfo {
+  message?: string;
+  status?: ConstsNodeRagInfoStatus;
+}
+
 export interface DomainRecommendNodeListResp {
   emoji?: string;
   id?: string;
@@ -1151,6 +1176,14 @@ export interface DomainStatPageReq {
   scene: 1 | 2 | 3 | 4;
 }
 
+export interface DomainSwitchModeReq {
+  mode: "manual" | "auto";
+}
+
+export interface DomainSwitchModeResp {
+  message?: string;
+}
+
 export interface DomainTextConfig {
   title?: string;
   type?: string;
@@ -1181,6 +1214,13 @@ export interface DomainUpdateAppReq {
   kb_id?: string;
   name?: string;
   settings?: DomainAppSettings;
+}
+
+export interface DomainUpdateAutoModelSettingReq {
+  /** APIKey 百智云 API 密钥 */
+  APIKey: string;
+  /** ChatModel 对话模型，允许为空表示清空为默认 */
+  ChatModel?: string;
 }
 
 export interface DomainUpdateKnowledgeBaseReq {
