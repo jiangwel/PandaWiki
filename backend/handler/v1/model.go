@@ -251,9 +251,9 @@ func (h *ModelHandler) SwitchMode(c echo.Context) error {
 //	@Tags			model
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body	domain.UpdateAutoModelSettingReq	true	"update BaiZhiCloud model setting request"
-//	@Success		200	{object}	domain.Response
-//	@Router			/api/v1/model/baizhicloud/setting [post]
+//	@Param			request	body		domain.UpdateAutoModelSettingReq	true	"update BaiZhiCloud model setting request"
+//	@Success		200		{object}	domain.Response
+//	@Router			/api/v1/model/auto-mode [post]
 func (h *ModelHandler) UpdateAutoModelSetting(c echo.Context) error {
 	var req domain.UpdateAutoModelSettingReq
 	if err := c.Bind(&req); err != nil {
@@ -269,14 +269,18 @@ func (h *ModelHandler) UpdateAutoModelSetting(c echo.Context) error {
 		modelName = consts.GetAutoModeDefaultModel(string(domain.ModelTypeChat))
 	}
 	// 检查 API Key 是否有效
-	if _, err := h.modelkit.CheckModel(ctx, &modelkitDomain.CheckModelReq{
-		Provider:  string(domain.ModelProviderBrandBaiZhiCloud),
-		Model:     modelName,
-		BaseURL:   "https://model-square.app.baizhi.cloud/v1",
-		APIKey:    req.APIKey,
-		Type:      string(domain.ModelTypeChat),
-	}); err != nil {
-		return h.NewResponseWithError(c, "检查百智云模型 API Key 失败", err)
+	resp, err := h.modelkit.CheckModel(ctx, &modelkitDomain.CheckModelReq{
+		Provider: string(domain.ModelProviderBrandBaiZhiCloud),
+		Model:    modelName,
+		BaseURL:  "https://model-square.app.baizhi.cloud/v1",
+		APIKey:   req.APIKey,
+		Type:     string(domain.ModelTypeChat),
+	})
+	if err != nil {
+		return h.NewResponseWithError(c, "百智云模型 API Key 检查失败", err)
+	}
+	if resp.Error != "" {
+		return h.NewResponseWithError(c, "百智云模型 API Key 检查失败: "+resp.Error, nil)
 	}
 
 	if err := h.usecase.UpdateAutoModelSetting(ctx, &req); err != nil {

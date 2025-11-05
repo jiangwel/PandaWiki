@@ -27,6 +27,7 @@ var ProviderSet = wire.NewSet(
 	usecase.NewLLMUsecase,
 	usecase.NewStatUseCase,
 	usecase.NewNodeUsecase,
+	usecase.NewModelUsecase,
 
 	NewRAGMQHandler,
 	NewRagDocUpdateHandler,

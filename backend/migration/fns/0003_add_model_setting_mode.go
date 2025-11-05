@@ -28,9 +28,9 @@ func (m *MigrationAddModelSettingMode) Execute(tx *gorm.DB) error {
 
 	// 定义model_setting_mode的值结构
 	modelSettingValue := map[string]interface{}{
-		"mode":       "manual", // 默认为自定义模式
-		"auto_mode_api_key":    "",       // 默认没有api key
-		"chat_model": "",       // 对话模型，默认为空
+		"mode":              "manual", // 默认为自定义模式
+		"auto_mode_api_key": "",       // 默认没有api key
+		"chat_model":        "",       // 对话模型，默认为空
 	}
 
 	// 将值转换为JSON字节数组
@@ -40,17 +40,16 @@ func (m *MigrationAddModelSettingMode) Execute(tx *gorm.DB) error {
 	}
 
 	// 创建setting记录
-	setting := &domain.Setting{
-		KBID:        "", // 空字符串表示全局设置
-		Key:         "model_setting_mode",
+	setting := &domain.SystemSetting{
+		Key:         domain.SystemSettingModelMode,
 		Value:       valueBytes,
 		Description: "Model setting mode configuration",
 	}
 
 	// 检查是否已存在该设置
-	var existingSetting domain.Setting
-	err = tx.WithContext(ctx).Where("kb_id = ? AND key = ?", "", "model_setting_mode").First(&existingSetting).Error
-	if err != nil {
+	var existingSetting domain.SystemSetting
+	err = tx.WithContext(ctx).Where("key = ?", domain.SystemSettingModelMode).First(&existingSetting).Error
+	if err !=nil && err != gorm.ErrRecordNotFound {
 		return fmt.Errorf("failed to check existing model_setting_mode setting: %w", err)
 	}
 

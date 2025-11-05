@@ -27,13 +27,13 @@ type RAGMQHandler struct {
 
 func NewRAGMQHandler(consumer mq.MQConsumer, logger *log.Logger, rag rag.RAGService, nodeRepo *pg.NodeRepository, kbRepo *pg.KnowledgeBaseRepository, llmUsecase *usecase.LLMUsecase, modelRepo *pg.ModelRepository) (*RAGMQHandler, error) {
 	h := &RAGMQHandler{
-		consumer:          consumer,
-		logger:            logger.WithModule("mq.rag"),
-		rag:               rag,
-		nodeRepo:          nodeRepo,
-		kbRepo:            kbRepo,
-		llmUsecase:        llmUsecase,
-		modelRepo:         modelRepo,
+		consumer:   consumer,
+		logger:     logger.WithModule("mq.rag"),
+		rag:        rag,
+		nodeRepo:   nodeRepo,
+		kbRepo:     kbRepo,
+		llmUsecase: llmUsecase,
+		modelRepo:  modelRepo,
 	}
 	if err := consumer.RegisterHandler(domain.VectorTaskTopic, h.HandleNodeContentVectorRequest); err != nil {
 		return nil, err
