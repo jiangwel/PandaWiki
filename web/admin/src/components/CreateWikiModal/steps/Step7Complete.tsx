@@ -3,7 +3,7 @@ import { Box, Stack, Button } from '@mui/material';
 import complete from '@/assets/images/init/complete.png';
 import { useAppSelector } from '@/store';
 
-const Step6Complete = () => {
+const Step7Complete = () => {
   const { kbDetail } = useAppSelector(state => state.config);
 
   const wikiUrl = useMemo(() => {
@@ -56,4 +56,4 @@ const Step6Complete = () => {
   );
 };
 
-export default Step6Complete;
+export default Step7Complete;

@@ -1,7 +1,7 @@
 import { Box, Stack, FormControlLabel, Checkbox } from '@mui/material';
 import publish from '@/assets/images/init/publish.png';
 
-const Step3Publish = () => {
+const Step4Publish = () => {
   return (
     <Stack gap={2} sx={{ textAlign: 'center', py: 4 }}>
       <Box component='img' src={publish} sx={{ width: '100%' }}></Box>
@@ -18,4 +18,4 @@ const Step3Publish = () => {
   );
 };
 
-export default Step3Publish;
+export default Step4Publish;

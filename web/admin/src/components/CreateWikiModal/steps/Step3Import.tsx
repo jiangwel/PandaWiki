@@ -5,11 +5,11 @@ import { postApiV1Node } from '@/request/Node';
 import { INIT_DOC_DATA } from './initData';
 import { useAppSelector } from '@/store';
 
-interface Step2ImportProps {
+interface Step3ImportProps {
   ref: Ref<{ onSubmit: () => Promise<Record<'id', string>[]> }>;
 }
 
-const Step2Import: React.FC<Step2ImportProps> = ({ ref }) => {
+const Step2Import: React.FC<Step3ImportProps> = ({ ref }) => {
   const { kb_id } = useAppSelector(state => state.config);
   const onSubmit = () => {
     return Promise.all(

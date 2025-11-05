@@ -73,11 +73,11 @@ const VALIDATION_RULES = {
   },
 };
 
-interface Step1ConfigProps {
+interface Step2ConfigProps {
   ref: Ref<{ onSubmit: () => Promise<unknown> }>;
 }
 
-const Step1Config: React.FC<Step1ConfigProps> = ({ ref }) => {
+const Step1Config: React.FC<Step2ConfigProps> = ({ ref }) => {
   const {
     control,
     formState: { errors },

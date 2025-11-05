@@ -6,11 +6,11 @@ import { getApiV1ModelList, getApiV1ModelModeSetting } from '@/request/Model';
 import { GithubComChaitinPandaWikiDomainModelListItem } from '@/request/types';
 import ModelConfig from '@/components/System/component/ModelConfig';
 
-interface Step0ModelProps {
+interface Step1ModelProps {
   ref: Ref<{ onSubmit: () => Promise<void> }>;
 }
 
-const Step0Model: React.FC<Step0ModelProps> = ({ ref }) => {
+const Step0Model: React.FC<Step1ModelProps> = ({ ref }) => {
   const { modelList } = useAppSelector(state => state.config);
   const dispatch = useAppDispatch();
 

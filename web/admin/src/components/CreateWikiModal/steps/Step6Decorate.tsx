@@ -5,12 +5,12 @@ import { INIT_LADING_DATA } from './initData';
 import { getApiV1AppDetail, putApiV1App } from '@/request/App';
 import { useAppSelector } from '@/store';
 
-interface Step5DecorateProps {
+interface Step6DecorateProps {
   ref: Ref<{ onSubmit: () => void }>;
   nodeIds: string[];
 }
 
-const Step5Decorate: React.FC<Step5DecorateProps> = ({ ref, nodeIds }) => {
+const Step5Decorate: React.FC<Step6DecorateProps> = ({ ref, nodeIds }) => {
   const { kb_id } = useAppSelector(state => state.config);
   const onSubmit = () => {
     return getApiV1AppDetail({
