@@ -2,15 +2,15 @@ import React, { useState, useImperativeHandle, Ref, useEffect } from 'react';
 import { Box } from '@mui/material';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { setModelList } from '@/store/slices/config';
-import { getApiV1ModelList } from '@/request/Model';
+import { getApiV1ModelList, getApiV1ModelModeSetting } from '@/request/Model';
 import { GithubComChaitinPandaWikiDomainModelListItem } from '@/request/types';
 import ModelConfig from '@/components/System/component/ModelConfig';
 
-interface Step1ModelProps {
+interface Step0ModelProps {
   ref: Ref<{ onSubmit: () => Promise<void> }>;
 }
 
-const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
+const Step0Model: React.FC<Step0ModelProps> = ({ ref }) => {
   const { modelList } = useAppSelector(state => state.config);
   const dispatch = useAppDispatch();
 
@@ -24,6 +24,7 @@ const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
     useState<GithubComChaitinPandaWikiDomainModelListItem | null>(null);
   const [analysisVLModelData, setAnalysisVLModelData] =
     useState<GithubComChaitinPandaWikiDomainModelListItem | null>(null);
+  const [isAutoMode, setIsAutoMode] = useState(false);
 
   const getModelList = () => {
     getApiV1ModelList().then(res => {
@@ -55,10 +56,24 @@ const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
   }, [modelList]);
 
   const onSubmit = async () => {
-    // 验证必须配置的模型
-    if (!chatModelData || !embeddingModelData || !rerankModelData) {
-      return Promise.reject(new Error('请配置必要的模型'));
+    // 检查模型模式设置
+    try {
+      const modeSetting = await getApiV1ModelModeSetting();
+
+      // 如果是 auto 模式,检查是否配置了 API key
+      if (modeSetting?.mode === 'auto') {
+        if (!modeSetting?.auto_mode_api_key) {
+          return Promise.reject(new Error('请完成模型配置'));
+        }
+      } else {
+        if (!chatModelData || !embeddingModelData || !rerankModelData) {
+          return Promise.reject(new Error('请配置必要的模型'));
+        }
+      }
+    } catch (error) {
+      return Promise.reject(new Error('获取模型模式设置失败'));
     }
+
     return Promise.resolve();
   };
 
@@ -76,9 +91,10 @@ const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
         analysisModelData={analysisModelData}
         analysisVLModelData={analysisVLModelData}
         getModelList={getModelList}
+        autoSwitchToAutoMode={true}
       />
     </Box>
   );
 };
 
-export default Step1Model;
+export default Step0Model;

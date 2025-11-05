@@ -1599,6 +1599,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/model/mode-setting": {
+            "get": {
+                "description": "get current model mode setting including mode, API key and chat model",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "model"
+                ],
+                "summary": "get model mode setting",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/domain.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/domain.ModelModeSetting"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/model/provider/supported": {
             "post": {
                 "description": "get provider supported model list",
@@ -6242,6 +6277,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.ModelModeSetting": {
+            "type": "object",
+            "properties": {
+                "auto_mode_api_key": {
+                    "description": "百智云 API Key",
+                    "type": "string"
+                },
+                "chat_model": {
+                    "description": "自定义对话模型名称",
+                    "type": "string"
+                },
+                "mode": {
+                    "description": "模式: manual 或 auto",
                     "type": "string"
                 }
             }

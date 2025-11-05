@@ -42,6 +42,7 @@ func NewModelHandler(echo *echo.Echo, baseHandler *handler.BaseHandler, logger *
 	group.PUT("", handler.UpdateModel)
 	group.POST("/switch-mode", handler.SwitchMode)
 	group.POST("/auto-mode", handler.UpdateAutoModelSetting)
+	group.GET("/mode-setting", handler.GetModelModeSetting)
 
 	return handler
 }
@@ -288,4 +289,29 @@ func (h *ModelHandler) UpdateAutoModelSetting(c echo.Context) error {
 	}
 
 	return h.NewResponseWithData(c, nil)
+}
+
+// get model mode setting
+//
+//	@Summary		get model mode setting
+//	@Description	get current model mode setting including mode, API key and chat model
+//	@Tags			model
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	domain.Response{data=domain.ModelModeSetting}
+//	@Router			/api/v1/model/mode-setting [get]
+func (h *ModelHandler) GetModelModeSetting(c echo.Context) error {
+	ctx := c.Request().Context()
+	setting, err := h.usecase.GetModelModeSetting(ctx)
+	if err != nil {
+		// 如果获取失败，返回默认值（手动模式）
+		h.logger.Warn("failed to get model mode setting, return default", log.Error(err))
+		defaultSetting := domain.ModelModeSetting{
+			Mode:           string(consts.ModelSettingModeManual),
+			AutoModeAPIKey: "",
+			ChatModel:      "",
+		}
+		return h.NewResponseWithData(c, defaultSetting)
+	}
+	return h.NewResponseWithData(c, setting)
 }

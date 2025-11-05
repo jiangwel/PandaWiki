@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Box, Stepper, Step, StepLabel } from '@mui/material';
-import { Modal } from '@ctzhian/ui';
+import { Modal, message } from '@ctzhian/ui';
 import { useLocation } from 'react-router-dom';
 import {
   setKbC,
@@ -10,7 +10,7 @@ import {
 import { useAppSelector, useAppDispatch } from '@/store';
 import { postApiV1KnowledgeBaseRelease } from '@/request/KnowledgeBase';
 import {
-  Step1Model,
+  Step0Model,
   Step1Config,
   Step2Import,
   Step3Publish,
@@ -42,7 +42,7 @@ const CreateWikiModal = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [nodeIds, setNodeIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const Step1ModelRef = useRef<{ onSubmit: () => Promise<void> }>(null);
+  const Step0ModelRef = useRef<{ onSubmit: () => Promise<void> }>(null);
   const step1ConfigRef = useRef<{ onSubmit: () => Promise<void> }>(null);
   const step2ImportRef = useRef<{
     onSubmit: () => Promise<Record<'id', string>[]>;
@@ -69,10 +69,13 @@ const CreateWikiModal = () => {
   const handleNext = () => {
     if (activeStep === 0) {
       setLoading(true);
-      Step1ModelRef.current
+      Step0ModelRef.current
         ?.onSubmit?.()
         .then(() => {
           setActiveStep(prev => prev + 1);
+        })
+        .catch(err => {
+          message.error(err.message || '验证失败，请检查配置');
         })
         .finally(() => {
           setLoading(false);
@@ -83,6 +86,9 @@ const CreateWikiModal = () => {
         ?.onSubmit?.()
         .then(() => {
           setActiveStep(prev => prev + 1);
+        })
+        .catch(err => {
+          message.error(err.message || '验证失败，请检查配置');
         })
         .finally(() => {
           setLoading(false);
@@ -95,15 +101,24 @@ const CreateWikiModal = () => {
           setNodeIds(res.map(item => item.id));
           setActiveStep(prev => prev + 1);
         })
+        .catch(err => {
+          message.error(err.message || '操作失败，请重试');
+        })
         .finally(() => {
           setLoading(false);
         });
     } else if (activeStep === 3) {
       setLoading(true);
-      onPublish().finally(() => {
-        setActiveStep(prev => prev + 1);
-        setLoading(false);
-      });
+      onPublish()
+        .then(() => {
+          setActiveStep(prev => prev + 1);
+        })
+        .catch(err => {
+          message.error(err.message || '发布失败，请重试');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     } else if (activeStep === 4) {
       setActiveStep(prev => prev + 1);
     } else if (activeStep === 5) {
@@ -112,6 +127,9 @@ const CreateWikiModal = () => {
         ?.onSubmit?.()
         .then(() => {
           setActiveStep(prev => prev + 1);
+        })
+        .catch(err => {
+          message.error(err.message || '保存失败，请重试');
         })
         .finally(() => {
           setLoading(false);
@@ -130,7 +148,7 @@ const CreateWikiModal = () => {
   const renderStepContent = () => {
     switch (activeStep) {
       case 0:
-        return <Step1Model ref={Step1ModelRef} />;
+        return <Step0Model ref={Step0ModelRef} />;
       case 1:
         return <Step1Config ref={step1ConfigRef} />;
       case 2:

@@ -147,7 +147,7 @@ func (u *ModelUsecase) GetChatModel(ctx context.Context) (*domain.Model, error) 
 	if err != nil {
 		u.logger.Error("get model mode setting failed, use manual mode", log.Error(err))
 	}
-	if err == nil && modelModeSetting.Mode == string(consts.ModelSettingModeAuto) {
+	if err == nil && modelModeSetting.Mode == string(consts.ModelSettingModeAuto) && modelModeSetting.AutoModeAPIKey != "" {
 		modelName := modelModeSetting.ChatModel
 		if modelName == "" {
 			modelName = string(consts.AutoModeDefaultChatModel)
@@ -184,7 +184,6 @@ func (u *ModelUsecase) SwitchMode(ctx context.Context, req *domain.SwitchModeReq
 		return err
 	}
 
-
 	if err := u.updateRAGModelsByMode(ctx, req.Mode, modelModeSetting.AutoModeAPIKey); err != nil {
 		u.logger.Info("failed to update RAG models by mode", log.String("mode", req.Mode), log.Any("error", err))
 	}
@@ -217,9 +216,15 @@ func (u *ModelUsecase) updateAutoModeSettingConfig(ctx context.Context, mode, ap
 	}
 
 	// 更新设置
-	config.AutoModeAPIKey = apiKey
-	config.ChatModel = chatModel
-	config.Mode = mode
+	if apiKey != "" {
+		config.AutoModeAPIKey = apiKey
+	}
+	if chatModel != "" {
+		config.ChatModel = chatModel
+	}
+	if mode != "" {
+		config.Mode = mode
+	}
 
 	// 持久化设置
 	updatedValue, err := json.Marshal(config)
@@ -242,7 +247,7 @@ func (u *ModelUsecase) GetModelModeSetting(ctx context.Context) (domain.ModelMod
 		return domain.ModelModeSetting{}, fmt.Errorf("failed to parse model mode setting: %w", err)
 	}
 	// 无效设置检查
-	if config == (domain.ModelModeSetting{}) || config.Mode == "" || config.AutoModeAPIKey == "" {
+	if config == (domain.ModelModeSetting{}) || config.Mode == ""{
 		return domain.ModelModeSetting{}, fmt.Errorf("model mode setting is invalid")
 	}
 	return config, nil

@@ -5,6 +5,7 @@ import {
   postApiV1ModelSwitchMode,
   putApiV1Model,
   postApiV1ModelAutoMode,
+  getApiV1ModelModeSetting,
 } from '@/request/Model';
 import { GithubComChaitinPandaWikiDomainModelListItem } from '@/request/types';
 import { addOpacityToColor } from '@/utils';
@@ -45,6 +46,7 @@ interface ModelConfigProps {
   analysisModelData: GithubComChaitinPandaWikiDomainModelListItem | null;
   analysisVLModelData: GithubComChaitinPandaWikiDomainModelListItem | null;
   getModelList: () => void;
+  autoSwitchToAutoMode?: boolean;
 }
 
 const ModelConfig = (props: ModelConfigProps) => {
@@ -57,6 +59,7 @@ const ModelConfig = (props: ModelConfigProps) => {
     analysisModelData,
     analysisVLModelData,
     getModelList,
+    autoSwitchToAutoMode = false,
   } = props;
 
   const [autoConfigMode, setAutoConfigMode] = useState(false);
@@ -64,6 +67,8 @@ const ModelConfig = (props: ModelConfigProps) => {
   const [supportedModels, setSupportedModels] = useState<string[]>([]);
   const [selectedAutoChatModel, setSelectedAutoChatModel] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasAutoSwitched, setHasAutoSwitched] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
   const [addType, setAddType] = useState<
@@ -96,6 +101,43 @@ const ModelConfig = (props: ModelConfigProps) => {
     'glm-4.5',
   ];
 
+  // 组件挂载时，获取当前配置
+  useEffect(() => {
+    const fetchModeSetting = async () => {
+      try {
+        const setting = await getApiV1ModelModeSetting();
+        if (setting) {
+          const isAuto = setting.mode === 'auto';
+          setAutoConfigMode(isAuto);
+          if (isAuto) {
+            setAutoConfigApiKey(setting.auto_mode_api_key || '');
+            setSelectedAutoChatModel(setting.chat_model || '');
+          }
+        }
+      } catch (err) {
+        console.error('获取模型配置失败:', err);
+      }
+    };
+    fetchModeSetting();
+  }, []);
+
+  // 如果需要自动切换到自动配置模式
+  useEffect(() => {
+    const switchToAutoMode = async () => {
+      if (autoSwitchToAutoMode && !hasAutoSwitched) {
+        try {
+          await postApiV1ModelSwitchMode({ mode: 'auto' });
+          setAutoConfigMode(true);
+          setHasAutoSwitched(true);
+          getModelList();
+        } catch (err) {
+          console.error('切换到自动配置模式失败:', err);
+        }
+      }
+    };
+    switchToAutoMode();
+  }, [autoSwitchToAutoMode, hasAutoSwitched, getModelList]);
+
   // 自动配置模式：不依赖 API Key，始终展示前端定义的模型列表
   useEffect(() => {
     if (!autoConfigMode) {
@@ -120,14 +162,18 @@ const ModelConfig = (props: ModelConfigProps) => {
       return;
     }
     try {
+      setIsSaving(true);
       await postApiV1ModelAutoMode({
         APIKey: autoConfigApiKey.trim(),
         ChatModel: selectedAutoChatModel,
       });
       message.success('保存成功');
+      getModelList(); // 刷新模型列表
       onCloseModal();
     } catch (err) {
       message.error('保存失败');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -149,6 +195,7 @@ const ModelConfig = (props: ModelConfigProps) => {
                   message.success(
                     checked ? '已切换为自动配置模式' : '已切换为手动配置模式',
                   );
+                  getModelList(); // 刷新模型列表
                 } catch (err) {
                   message.error('切换模式失败');
                 }
@@ -262,10 +309,19 @@ const ModelConfig = (props: ModelConfigProps) => {
             </Box>
           </Stack>
           <Stack direction='row' justifyContent='flex-end' sx={{ mt: 1 }}>
-            <Button variant='outlined' onClick={onCloseModal} sx={{ mr: 1 }}>
+            <Button
+              variant='outlined'
+              onClick={onCloseModal}
+              sx={{ mr: 1 }}
+              disabled={isSaving}
+            >
               取消
             </Button>
-            <Button variant='contained' onClick={handleSaveAutoConfig}>
+            <Button
+              variant='contained'
+              onClick={handleSaveAutoConfig}
+              loading={isSaving}
+            >
               保存
             </Button>
           </Stack>

@@ -44,9 +44,6 @@ const System = () => {
   const [analysisVLModelData, setAnalysisVLModelData] =
     useState<GithubComChaitinPandaWikiDomainModelListItem | null>(null);
 
-  const disabledClose =
-    !chatModelData || !embeddingModelData || !rerankModelData;
-
   const getModelList = () => {
     getApiV1ModelList().then(res => {
       dispatch(
@@ -68,8 +65,9 @@ const System = () => {
     setRerankModelData(rerank);
     setAnalysisModelData(analysis);
     setAnalysisVLModelData(analysisVL);
-    const status = chat && embedding && rerank;
-    if (!status) setOpen(true);
+
+    // 检查模型配置状态
+    const status = !!(chat && embedding && rerank);
     dispatch(setModelStatus(status));
   };
 
@@ -98,38 +96,13 @@ const System = () => {
             系统配置
           </Button>
         )}
-
-        {(!chatModelData || !embeddingModelData || !rerankModelData) && (
-          <Tooltip arrow title='暂未配置模型'>
-            <Stack
-              alignItems={'center'}
-              justifyContent={'center'}
-              sx={{
-                width: 22,
-                height: 22,
-                cursor: 'pointer',
-                position: 'absolute',
-                top: '-4px',
-                right: '-8px',
-                bgcolor: '#fff',
-                borderRadius: '50%',
-              }}
-            >
-              <LottieIcon
-                id='warning'
-                src={ErrorJSON}
-                style={{ width: 20, height: 20 }}
-              />
-            </Stack>
-          </Tooltip>
-        )}
       </Box>
       <Modal
         title='系统配置'
         width={1100}
         open={open}
-        closable={!disabledClose}
-        disableEscapeKeyDown={disabledClose}
+        // closable={!disabledClose}
+        // disableEscapeKeyDown={disabledClose}
         disableEnforceFocus={true}
         footer={null}
         onCancel={() => setOpen(false)}

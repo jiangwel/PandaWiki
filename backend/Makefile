@@ -1,5 +1,3 @@
-.PHONY: generate generate_pro lint migrate_sql image push-prod-images dev pro pro_consumer
-
 generate:
 	swag fmt --dir handler && swag init --exclude pro -g cmd/api/main.go --pd \
 	&& wire cmd/api/wire.go \
@@ -38,15 +36,12 @@ push-prod-images:
 COMMIT_HASH=$(shell git rev-parse --short HEAD)
 LOCAL_PLATFORM=linux/$(shell uname -m)
 #LOCAL_PLATFORM=linux/amd64
-dev:
+dev:generate
 	make image PLATFORM=${LOCAL_PLATFORM} DOCKERFILE=Dockerfile.api IMAGE_NAME=chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-api:latest OUTPUT=type=docker VERSION=${COMMIT_HASH} \
 	&& make image PLATFORM=${LOCAL_PLATFORM} DOCKERFILE=Dockerfile.consumer IMAGE_NAME=chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-consumer:latest OUTPUT=type=docker VERSION=${COMMIT_HASH} \
-	&& docker save -o ./panda-wiki-api.tar chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-api:latest
+	&& cd deploy && docker compose up -d
 
-pro:
+pro:generate_pro
 	make image PLATFORM=${LOCAL_PLATFORM} DOCKERFILE=Dockerfile.api.pro IMAGE_NAME=chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-api:latest OUTPUT=type=docker VERSION=${COMMIT_HASH} \
-	&& docker save -o ./panda-wiki-api-pro.tar chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-api:latest
-
-pro_consumer:
-	make image PLATFORM=${LOCAL_PLATFORM} DOCKERFILE=Dockerfile.consumer.pro IMAGE_NAME=chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-consumer:latest OUTPUT=type=docker VERSION=${COMMIT_HASH} \
-	&& docker save -o ./panda-wiki-consumer-pro.tar chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-consumer:latest
+	&& make image PLATFORM=${LOCAL_PLATFORM} DOCKERFILE=Dockerfile.consumer.pro IMAGE_NAME=chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-consumer:latest OUTPUT=type=docker VERSION=${COMMIT_HASH} \
+	&& cd deploy && docker compose up -d
