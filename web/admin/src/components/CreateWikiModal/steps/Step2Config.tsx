@@ -77,7 +77,7 @@ interface Step2ConfigProps {
   ref: Ref<{ onSubmit: () => Promise<unknown> }>;
 }
 
-const Step1Config: React.FC<Step2ConfigProps> = ({ ref }) => {
+const Step2Config: React.FC<Step2ConfigProps> = ({ ref }) => {
   const {
     control,
     formState: { errors },
@@ -358,4 +358,4 @@ const Step1Config: React.FC<Step2ConfigProps> = ({ ref }) => {
   );
 };
 
-export default Step1Config;
+export default Step2Config;

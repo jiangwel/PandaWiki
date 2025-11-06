@@ -33,9 +33,7 @@ const steps = [
 ];
 
 const CreateWikiModal = () => {
-  const { kb_c, kb_id, kbList, modelStatus } = useAppSelector(
-    state => state.config,
-  );
+  const { kb_c, kb_id, kbList } = useAppSelector(state => state.config);
   const dispatch = useAppDispatch();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -73,6 +71,9 @@ const CreateWikiModal = () => {
         ?.onSubmit?.()
         .then(() => {
           setActiveStep(prev => prev + 1);
+        })
+        .catch(error => {
+          message.error(error.message || '模型配置验证失败');
         })
         .finally(() => {
           setLoading(false);
@@ -152,19 +153,25 @@ const CreateWikiModal = () => {
     if (!open) {
       setTimeout(() => {
         setNodeIds([]);
-        setActiveStep(0);
+        // 根据知识库数量设置初始步骤
+        const initialStep = kbList && kbList.length >= 1 ? 1 : 0;
+        setActiveStep(initialStep);
       }, 300);
     }
     dispatch(setIsCreateWikiModalOpen(open));
-  }, [open]);
+  }, [open, kbList]);
 
   useEffect(() => {
     setOpen(kb_c);
-  }, [kb_c]);
+    // 如果知识库列表长度大于等于1，跳过第一步（模型配置）
+    if (kb_c && kbList && kbList.length >= 1) {
+      setActiveStep(1);
+    }
+  }, [kb_c, kbList]);
 
   useEffect(() => {
-    if (kbList?.length === 0 && modelStatus) setOpen(true);
-  }, [kbList, modelStatus]);
+    if (kbList?.length === 0) setOpen(true);
+  }, [kbList]);
 
   return (
     <Modal
@@ -172,7 +179,10 @@ const CreateWikiModal = () => {
       onCancel={onCancel}
       title='创建 Wiki 站点'
       width={880}
-      closable={activeStep === 0 && (kbList || []).length > 0}
+      closable={
+        (activeStep === 0 && (kbList || []).length > 0) ||
+        (activeStep === 1 && (kbList || []).length >= 1)
+      }
       showCancel={false}
       okText={activeStep === steps.length - 1 ? '关闭' : '下一步'}
       // cancelText='上一步'

@@ -10,7 +10,7 @@ interface Step6DecorateProps {
   nodeIds: string[];
 }
 
-const Step5Decorate: React.FC<Step6DecorateProps> = ({ ref, nodeIds }) => {
+const Step6Decorate: React.FC<Step6DecorateProps> = ({ ref, nodeIds }) => {
   const { kb_id } = useAppSelector(state => state.config);
   const onSubmit = () => {
     return getApiV1AppDetail({
@@ -60,4 +60,4 @@ const Step5Decorate: React.FC<Step6DecorateProps> = ({ ref, nodeIds }) => {
   );
 };
 
-export default Step5Decorate;
+export default Step6Decorate;

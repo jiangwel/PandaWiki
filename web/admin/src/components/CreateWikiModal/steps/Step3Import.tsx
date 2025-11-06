@@ -9,7 +9,7 @@ interface Step3ImportProps {
   ref: Ref<{ onSubmit: () => Promise<Record<'id', string>[]> }>;
 }
 
-const Step2Import: React.FC<Step3ImportProps> = ({ ref }) => {
+const Step3Import: React.FC<Step3ImportProps> = ({ ref }) => {
   const { kb_id } = useAppSelector(state => state.config);
   const onSubmit = () => {
     return Promise.all(
@@ -42,4 +42,4 @@ const Step2Import: React.FC<Step3ImportProps> = ({ ref }) => {
   );
 };
 
-export default Step2Import;
+export default Step3Import;

@@ -101,8 +101,6 @@ const System = () => {
         title='系统配置'
         width={1100}
         open={open}
-        // closable={!disabledClose}
-        // disableEscapeKeyDown={disabledClose}
         disableEnforceFocus={true}
         footer={null}
         onCancel={() => setOpen(false)}

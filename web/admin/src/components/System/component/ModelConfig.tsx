@@ -4,7 +4,6 @@ import { ModelProvider } from '@/constant/enums';
 import {
   postApiV1ModelSwitchMode,
   putApiV1Model,
-  postApiV1ModelAutoMode,
   getApiV1ModelModeSetting,
 } from '@/request/Model';
 import { GithubComChaitinPandaWikiDomainModelListItem } from '@/request/types';
@@ -15,22 +14,18 @@ import {
   Button,
   Stack,
   Switch,
+  Radio,
+  RadioGroup,
   FormControlLabel,
-  TextField,
-  Select,
-  MenuItem,
-  InputAdornment,
-  IconButton,
   useTheme,
 } from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import LottieIcon from '../../LottieIcon';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import {
   convertLocalModelToUIModel,
   modelService,
 } from '@/services/modelService';
+import AutoModelConfig from './AutoModelConfig';
 
 const ModelModal = lazy(() =>
   import('@ctzhian/modelkit').then(
@@ -47,6 +42,7 @@ interface ModelConfigProps {
   analysisVLModelData: GithubComChaitinPandaWikiDomainModelListItem | null;
   getModelList: () => void;
   autoSwitchToAutoMode?: boolean;
+  hideDocumentationHint?: boolean;
 }
 
 const ModelConfig = (props: ModelConfigProps) => {
@@ -60,15 +56,14 @@ const ModelConfig = (props: ModelConfigProps) => {
     analysisVLModelData,
     getModelList,
     autoSwitchToAutoMode = false,
+    hideDocumentationHint = false,
   } = props;
 
   const [autoConfigMode, setAutoConfigMode] = useState(false);
-  const [autoConfigApiKey, setAutoConfigApiKey] = useState('');
-  const [supportedModels, setSupportedModels] = useState<string[]>([]);
-  const [selectedAutoChatModel, setSelectedAutoChatModel] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [hasAutoSwitched, setHasAutoSwitched] = useState(false);
+  const [tempMode, setTempMode] = useState<'auto' | 'manual'>('manual');
+  const [savedMode, setSavedMode] = useState<'auto' | 'manual'>('manual');
+  const [isSaving, setIsSaving] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
   const [addType, setAddType] = useState<
@@ -92,15 +87,6 @@ const ModelConfig = (props: ModelConfigProps) => {
     }
   };
 
-  // 自动配置模式：前端定义百智云 Chat 模型列表
-  const BAIZHI_CLOUD_CHAT_MODELS: string[] = [
-    'deepseek-v3.1',
-    'deepseek-r1',
-    'kimi-k2-0711-preview',
-    'qwen-vl-max-latest',
-    'glm-4.5',
-  ];
-
   // 组件挂载时，获取当前配置
   useEffect(() => {
     const fetchModeSetting = async () => {
@@ -108,11 +94,10 @@ const ModelConfig = (props: ModelConfigProps) => {
         const setting = await getApiV1ModelModeSetting();
         if (setting) {
           const isAuto = setting.mode === 'auto';
+          const mode = setting.mode as 'auto' | 'manual';
           setAutoConfigMode(isAuto);
-          if (isAuto) {
-            setAutoConfigApiKey(setting.auto_mode_api_key || '');
-            setSelectedAutoChatModel(setting.chat_model || '');
-          }
+          setTempMode(mode);
+          setSavedMode(mode);
         }
       } catch (err) {
         console.error('获取模型配置失败:', err);
@@ -138,40 +123,20 @@ const ModelConfig = (props: ModelConfigProps) => {
     switchToAutoMode();
   }, [autoSwitchToAutoMode, hasAutoSwitched, getModelList]);
 
-  // 自动配置模式：不依赖 API Key，始终展示前端定义的模型列表
-  useEffect(() => {
-    if (!autoConfigMode) {
-      setSupportedModels([]);
-      setSelectedAutoChatModel('');
-      return;
-    }
-    const list: string[] = BAIZHI_CLOUD_CHAT_MODELS;
-    setSupportedModels(list);
-    if (list.length && !selectedAutoChatModel) {
-      setSelectedAutoChatModel(list[0]);
-    }
-  }, [autoConfigMode]);
-
-  const handleSaveAutoConfig = async () => {
-    if (!autoConfigApiKey.trim()) {
-      message.warning('请填写 API Key');
-      return;
-    }
-    if (!selectedAutoChatModel) {
-      message.warning('请选择聊天模型');
-      return;
-    }
+  const handleSave = async () => {
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-      await postApiV1ModelAutoMode({
-        APIKey: autoConfigApiKey.trim(),
-        ChatModel: selectedAutoChatModel,
+      await postApiV1ModelSwitchMode({
+        mode: tempMode,
       });
-      message.success('保存成功');
+      setSavedMode(tempMode);
+      setAutoConfigMode(tempMode === 'auto');
+      message.success(
+        tempMode === 'auto' ? '已切换为自动配置模式' : '已切换为手动配置模式',
+      );
       getModelList(); // 刷新模型列表
-      onCloseModal();
     } catch (err) {
-      message.error('保存失败');
+      message.error('切换模式失败');
     } finally {
       setIsSaving(false);
     }
@@ -179,153 +144,67 @@ const ModelConfig = (props: ModelConfigProps) => {
 
   return (
     <Stack gap={2}>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-start', pl: 2 }}>
-        <FormControlLabel
-          control={
-            <Switch
-              size='small'
-              checked={autoConfigMode}
-              onChange={async e => {
-                const checked = e.target.checked;
-                try {
-                  await postApiV1ModelSwitchMode({
-                    mode: checked ? 'auto' : 'manual',
-                  });
-                  setAutoConfigMode(checked);
-                  message.success(
-                    checked ? '已切换为自动配置模式' : '已切换为手动配置模式',
-                  );
-                  getModelList(); // 刷新模型列表
-                } catch (err) {
-                  message.error('切换模式失败');
-                }
+      <Box sx={{ pl: 2, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+        <Box sx={{ flex: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              fontSize: 14,
+              fontWeight: 'bold',
+              color: 'text.primary',
+              mb: 1,
+            }}
+          >
+            <Box
+              sx={{
+                width: 3,
+                height: 14,
+                bgcolor: 'primary.main',
+                borderRadius: '2px',
+                mr: 1,
               }}
             />
-          }
-          label='自动配置模型'
-        />
+            模型配置
+          </Box>
+          <RadioGroup
+            row
+            value={tempMode}
+            onChange={e => {
+              const newMode = e.target.value as 'auto' | 'manual';
+              setTempMode(newMode);
+              // 立即切换显示的组件
+              setAutoConfigMode(newMode === 'auto');
+            }}
+          >
+            <FormControlLabel
+              value='auto'
+              control={<Radio size='small' />}
+              label='自动配置'
+            />
+            <FormControlLabel
+              value='manual'
+              control={<Radio size='small' />}
+              label='手动配置'
+            />
+          </RadioGroup>
+        </Box>
+        <Button
+          variant='contained'
+          size='small'
+          loading={isSaving}
+          disabled={tempMode === savedMode}
+          onClick={handleSave}
+          sx={{ mt: 3 }}
+        >
+          保存
+        </Button>
       </Box>
       {autoConfigMode ? (
-        <Card
-          sx={{
-            flex: 1,
-            p: 2,
-            overflow: 'hidden',
-            overflowY: 'auto',
-            border: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Stack direction={'row'} alignItems={'center'} gap={1}>
-            <Icon type='icon-baizhiyunlogo' sx={{ fontSize: 18 }} />
-            <Box sx={{ fontSize: 18, fontFamily: 'Gbold' }}>百智云</Box>
-          </Stack>
-          <Stack
-            direction={'row'}
-            alignItems={'center'}
-            justifyContent={'space-between'}
-            sx={{ mt: 2 }}
-          >
-            <Box sx={{ fontSize: 12 }}>
-              API Key{' '}
-              <Box component='span' sx={{ color: 'error.main' }}>
-                *
-              </Box>
-            </Box>
-            <Box
-              component='a'
-              href='https://model-square.app.baizhi.cloud/token'
-              target='_blank'
-              sx={{ color: 'primary.main', fontSize: 12 }}
-            >
-              获取百智云API Key
-            </Box>
-          </Stack>
-          <Box sx={{ mt: 1.5 }}>
-            <TextField
-              fullWidth
-              type={showApiKey ? 'text' : 'password'}
-              placeholder=''
-              value={autoConfigApiKey}
-              onChange={e => setAutoConfigApiKey(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position='end'>
-                    <IconButton
-                      size='small'
-                      onClick={() => setShowApiKey(s => !s)}
-                    >
-                      {showApiKey ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-notchedOutline': {
-                  border: 'none',
-                },
-                '& .MuiInputBase-root': {
-                  borderRadius: '10px',
-                  bgcolor: '#F8F8FA',
-                },
-              }}
-            />
-          </Box>
-          <Stack
-            direction='row'
-            justifyContent='flex-end'
-            sx={{ mt: 2, mb: 3 }}
-          >
-            <Box sx={{ width: 420 }}>
-              <Select
-                fullWidth
-                size='small'
-                displayEmpty
-                value={selectedAutoChatModel}
-                onChange={e =>
-                  setSelectedAutoChatModel(e.target.value as string)
-                }
-                sx={{
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    border: 'none',
-                  },
-                  '& .MuiInputBase-root': {
-                    borderRadius: '10px',
-                    bgcolor: '#F8F8FA',
-                  },
-                }}
-                renderValue={sel =>
-                  sel && (sel as string).length
-                    ? (sel as string)
-                    : '请选择聊天模型'
-                }
-              >
-                {supportedModels.map(model => (
-                  <MenuItem key={model} value={model}>
-                    {model}
-                  </MenuItem>
-                ))}
-              </Select>
-            </Box>
-          </Stack>
-          <Stack direction='row' justifyContent='flex-end' sx={{ mt: 1 }}>
-            <Button
-              variant='outlined'
-              onClick={onCloseModal}
-              sx={{ mr: 1 }}
-              disabled={isSaving}
-            >
-              取消
-            </Button>
-            <Button
-              variant='contained'
-              onClick={handleSaveAutoConfig}
-              loading={isSaving}
-            >
-              保存
-            </Button>
-          </Stack>
-        </Card>
+        <AutoModelConfig
+          onCloseModal={onCloseModal}
+          getModelList={getModelList}
+        />
       ) : (
         <>
           {/* Chat */}
@@ -491,32 +370,38 @@ const ModelConfig = (props: ModelConfigProps) => {
                           0.1,
                         ),
                         color: 'error.main',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
                       }}
                     >
                       必填配置
                     </Box>
-                    <Stack
-                      alignItems={'center'}
-                      justifyContent={'center'}
-                      sx={{ width: 22, height: 22, cursor: 'pointer' }}
-                    >
-                      <LottieIcon
-                        id='warning'
-                        src={ErrorJSON}
-                        style={{ width: 20, height: 20 }}
-                      />
-                    </Stack>
-                    <Box sx={{ color: 'error.main', fontSize: 12 }}>
-                      未配置无法使用，如果没有可用模型，可参考&nbsp;
-                      <Box
-                        component={'a'}
-                        sx={{ color: 'primary.main', cursor: 'pointer' }}
-                        href='https://pandawiki.docs.baizhi.cloud/node/01973ffe-e1bc-7165-9a71-e7aa461c05ea'
-                        target='_blank'
-                      >
-                        文档
-                      </Box>
-                    </Box>
+                    {!hideDocumentationHint && (
+                      <>
+                        <Stack
+                          alignItems={'center'}
+                          justifyContent={'center'}
+                          sx={{ width: 22, height: 22, cursor: 'pointer' }}
+                        >
+                          <LottieIcon
+                            id='warning'
+                            src={ErrorJSON}
+                            style={{ width: 20, height: 20 }}
+                          />
+                        </Stack>
+                        <Box sx={{ color: 'error.main', fontSize: 12 }}>
+                          未配置无法使用，如果没有可用模型，可参考&nbsp;
+                          <Box
+                            component={'a'}
+                            sx={{ color: 'primary.main', cursor: 'pointer' }}
+                            href='https://pandawiki.docs.baizhi.cloud/node/01973ffe-e1bc-7165-9a71-e7aa461c05ea'
+                            target='_blank'
+                          >
+                            文档
+                          </Box>
+                        </Box>
+                      </>
+                    )}
                   </Stack>
                 )}
               </Box>
@@ -699,32 +584,38 @@ const ModelConfig = (props: ModelConfigProps) => {
                           0.1,
                         ),
                         color: 'error.main',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
                       }}
                     >
                       必填配置
                     </Box>
-                    <Stack
-                      alignItems={'center'}
-                      justifyContent={'center'}
-                      sx={{ width: 22, height: 22, cursor: 'pointer' }}
-                    >
-                      <LottieIcon
-                        id='warning'
-                        src={ErrorJSON}
-                        style={{ width: 20, height: 20 }}
-                      />
-                    </Stack>
-                    <Box sx={{ color: 'error.main', fontSize: 12 }}>
-                      未配置无法使用，如果没有可用模型，可参考&nbsp;
-                      <Box
-                        component={'a'}
-                        sx={{ color: 'primary.main', cursor: 'pointer' }}
-                        href='https://pandawiki.docs.baizhi.cloud/node/01973ffe-e1bc-7165-9a71-e7aa461c05ea'
-                        target='_blank'
-                      >
-                        文档
-                      </Box>
-                    </Box>
+                    {!hideDocumentationHint && (
+                      <>
+                        <Stack
+                          alignItems={'center'}
+                          justifyContent={'center'}
+                          sx={{ width: 22, height: 22, cursor: 'pointer' }}
+                        >
+                          <LottieIcon
+                            id='warning'
+                            src={ErrorJSON}
+                            style={{ width: 20, height: 20 }}
+                          />
+                        </Stack>
+                        <Box sx={{ color: 'error.main', fontSize: 12 }}>
+                          未配置无法使用，如果没有可用模型，可参考&nbsp;
+                          <Box
+                            component={'a'}
+                            sx={{ color: 'primary.main', cursor: 'pointer' }}
+                            href='https://pandawiki.docs.baizhi.cloud/node/01973ffe-e1bc-7165-9a71-e7aa461c05ea'
+                            target='_blank'
+                          >
+                            文档
+                          </Box>
+                        </Box>
+                      </>
+                    )}
                   </Stack>
                 )}
               </Box>
@@ -902,32 +793,38 @@ const ModelConfig = (props: ModelConfigProps) => {
                           0.1,
                         ),
                         color: 'error.main',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
                       }}
                     >
                       必填配置
                     </Box>
-                    <Stack
-                      alignItems={'center'}
-                      justifyContent={'center'}
-                      sx={{ width: 22, height: 22, cursor: 'pointer' }}
-                    >
-                      <LottieIcon
-                        id='warning'
-                        src={ErrorJSON}
-                        style={{ width: 20, height: 20 }}
-                      />
-                    </Stack>
-                    <Box sx={{ color: 'error.main', fontSize: 12 }}>
-                      未配置无法使用，如果没有可用模型，可参考&nbsp;
-                      <Box
-                        component={'a'}
-                        sx={{ color: 'primary.main', cursor: 'pointer' }}
-                        href='https://pandawiki.docs.baizhi.cloud/node/01973ffe-e1bc-7165-9a71-e7aa461c05ea'
-                        target='_blank'
-                      >
-                        文档
-                      </Box>
-                    </Box>
+                    {!hideDocumentationHint && (
+                      <>
+                        <Stack
+                          alignItems={'center'}
+                          justifyContent={'center'}
+                          sx={{ width: 22, height: 22, cursor: 'pointer' }}
+                        >
+                          <LottieIcon
+                            id='warning'
+                            src={ErrorJSON}
+                            style={{ width: 20, height: 20 }}
+                          />
+                        </Stack>
+                        <Box sx={{ color: 'error.main', fontSize: 12 }}>
+                          未配置无法使用，如果没有可用模型，可参考&nbsp;
+                          <Box
+                            component={'a'}
+                            sx={{ color: 'primary.main', cursor: 'pointer' }}
+                            href='https://pandawiki.docs.baizhi.cloud/node/01973ffe-e1bc-7165-9a71-e7aa461c05ea'
+                            target='_blank'
+                          >
+                            文档
+                          </Box>
+                        </Box>
+                      </>
+                    )}
                   </Stack>
                 )}
               </Box>
@@ -1050,28 +947,15 @@ const ModelConfig = (props: ModelConfigProps) => {
                       px: 1,
                       lineHeight: '20px',
                       borderRadius: '10px',
-                      bgcolor: theme.palette.divider,
-                      color: 'text.tertiary',
+                      bgcolor: addOpacityToColor(
+                        theme.palette.primary.main,
+                        0.1,
+                      ),
+                      color: 'primary.main',
                     }}
                   >
-                    可选
+                    必选
                   </Box>
-                  {analysisModelData && (
-                    <Switch
-                      size='small'
-                      checked={analysisModelData.is_active}
-                      onChange={() => {
-                        // @ts-expect-error base_url 可能为 undefined
-                        putApiV1Model({
-                          ...analysisModelData,
-                          is_active: !analysisModelData.is_active,
-                        }).then(() => {
-                          message.success('修改成功');
-                          getModelList();
-                        });
-                      }}
-                    />
-                  )}
                 </Stack>
                 <Box sx={{ fontSize: 12, color: 'text.tertiary', mt: 1 }}>
                   在
@@ -1084,7 +968,7 @@ const ModelConfig = (props: ModelConfigProps) => {
                     {' '}
                     智能问答{' '}
                   </Box>
-                  过程中使用， 启用后智能问答的效果会得到加强，可选配置。
+                  过程中使用。
                 </Box>
               </Box>
               <Box sx={{ flexGrow: 1, flexSelf: 'flex-start' }}>
@@ -1106,19 +990,51 @@ const ModelConfig = (props: ModelConfigProps) => {
                     状态正常
                   </Box>
                 ) : (
-                  <Box
-                    sx={{
-                      display: 'inline-block',
-                      fontSize: 12,
-                      px: 1,
-                      lineHeight: '20px',
-                      borderRadius: '10px',
-                      bgcolor: theme.palette.divider,
-                      color: 'text.tertiary',
-                    }}
-                  >
-                    可选模型
-                  </Box>
+                  <Stack direction={'row'} alignItems={'center'} gap={1}>
+                    <Box
+                      sx={{
+                        fontSize: 12,
+                        px: 1,
+                        lineHeight: '20px',
+                        borderRadius: '10px',
+                        bgcolor: addOpacityToColor(
+                          theme.palette.error.main,
+                          0.1,
+                        ),
+                        color: 'error.main',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                      }}
+                    >
+                      必填配置
+                    </Box>
+                    {!hideDocumentationHint && (
+                      <>
+                        <Stack
+                          alignItems={'center'}
+                          justifyContent={'center'}
+                          sx={{ width: 22, height: 22, cursor: 'pointer' }}
+                        >
+                          <LottieIcon
+                            id='warning'
+                            src={ErrorJSON}
+                            style={{ width: 20, height: 20 }}
+                          />
+                        </Stack>
+                        <Box sx={{ color: 'error.main', fontSize: 12 }}>
+                          未配置无法使用，如果没有可用模型，可参考&nbsp;
+                          <Box
+                            component={'a'}
+                            sx={{ color: 'primary.main', cursor: 'pointer' }}
+                            href='https://pandawiki.docs.baizhi.cloud/node/01973ffe-e1bc-7165-9a71-e7aa461c05ea'
+                            target='_blank'
+                          >
+                            文档
+                          </Box>
+                        </Box>
+                      </>
+                    )}
+                  </Stack>
                 )}
               </Box>
               <Button
@@ -1305,6 +1221,8 @@ const ModelConfig = (props: ModelConfigProps) => {
                       borderRadius: '10px',
                       bgcolor: theme.palette.divider,
                       color: 'text.tertiary',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
                     }}
                   >
                     可选模型

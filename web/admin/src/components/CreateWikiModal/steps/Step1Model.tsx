@@ -10,7 +10,7 @@ interface Step1ModelProps {
   ref: Ref<{ onSubmit: () => Promise<void> }>;
 }
 
-const Step0Model: React.FC<Step1ModelProps> = ({ ref }) => {
+const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
   const { modelList } = useAppSelector(state => state.config);
   const dispatch = useAppDispatch();
 
@@ -92,9 +92,10 @@ const Step0Model: React.FC<Step1ModelProps> = ({ ref }) => {
         analysisVLModelData={analysisVLModelData}
         getModelList={getModelList}
         autoSwitchToAutoMode={true}
+        hideDocumentationHint={true}
       />
     </Box>
   );
 };
 
-export default Step0Model;
+export default Step1Model;
