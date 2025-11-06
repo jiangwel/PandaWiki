@@ -1,10 +1,22 @@
-import React, { useState, useImperativeHandle, Ref, useEffect } from 'react';
+import React, {
+  useState,
+  useImperativeHandle,
+  Ref,
+  useEffect,
+  useRef,
+} from 'react';
 import { Box } from '@mui/material';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { setModelList } from '@/store/slices/config';
-import { getApiV1ModelList, getApiV1ModelModeSetting } from '@/request/Model';
+import {
+  getApiV1ModelList,
+  getApiV1ModelModeSetting,
+  postApiV1ModelAutoMode,
+} from '@/request/Model';
 import { GithubComChaitinPandaWikiDomainModelListItem } from '@/request/types';
-import ModelConfig from '@/components/System/component/ModelConfig';
+import ModelConfig, {
+  ModelConfigRef,
+} from '@/components/System/component/ModelConfig';
 
 interface Step1ModelProps {
   ref: Ref<{ onSubmit: () => Promise<void> }>;
@@ -13,6 +25,8 @@ interface Step1ModelProps {
 const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
   const { modelList } = useAppSelector(state => state.config);
   const dispatch = useAppDispatch();
+
+  const modelConfigRef = useRef<ModelConfigRef>(null);
 
   const [chatModelData, setChatModelData] =
     useState<GithubComChaitinPandaWikiDomainModelListItem | null>(null);
@@ -62,16 +76,36 @@ const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
 
       // 如果是 auto 模式,检查是否配置了 API key
       if (modeSetting?.mode === 'auto') {
-        if (!modeSetting?.auto_mode_api_key) {
-          return Promise.reject(new Error('请完成模型配置'));
+        // 从子组件获取表单数据
+        const formData = modelConfigRef.current?.getAutoConfigFormData();
+
+        if (!formData || !formData.apiKey) {
+          return Promise.reject(new Error('请输入 API Key'));
         }
+
+        // 调用自动配置接口
+        await postApiV1ModelAutoMode({
+          APIKey: formData.apiKey,
+        });
+
+        // 刷新模型列表
+        await getModelList();
       } else {
-        if (!chatModelData || !embeddingModelData || !rerankModelData) {
+        // 手动模式检查
+        if (
+          !chatModelData ||
+          !embeddingModelData ||
+          !rerankModelData ||
+          !analysisModelData
+        ) {
           return Promise.reject(new Error('请配置必要的模型'));
         }
       }
     } catch (error) {
-      return Promise.reject(new Error('获取模型模式设置失败'));
+      if (error instanceof Error) {
+        return Promise.reject(error);
+      }
+      return Promise.reject(new Error('配置模型失败'));
     }
 
     return Promise.resolve();
@@ -84,6 +118,7 @@ const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
   return (
     <Box>
       <ModelConfig
+        ref={modelConfigRef}
         onCloseModal={() => {}}
         chatModelData={chatModelData}
         embeddingModelData={embeddingModelData}

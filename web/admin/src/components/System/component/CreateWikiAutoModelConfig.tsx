@@ -13,22 +13,24 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 
-interface CreateWikiAutoModelConfigProps {
-  /** 关闭模态框的回调 */
-  onCloseModal: () => void;
-  /** 刷新模型列表的回调 */
-  getModelList: () => void;
+export interface CreateWikiAutoModelConfigRef {
+  getFormData: () => {
+    apiKey: string;
+    selectedModel: string;
+  };
 }
 
-const CreateWikiAutoModelConfig = (props: CreateWikiAutoModelConfigProps) => {
-  const { onCloseModal, getModelList } = props;
+interface CreateWikiAutoModelConfigProps {}
 
+const CreateWikiAutoModelConfig = forwardRef<
+  CreateWikiAutoModelConfigRef,
+  CreateWikiAutoModelConfigProps
+>((props, ref) => {
   const [autoConfigApiKey, setAutoConfigApiKey] = useState('');
   const [selectedAutoChatModel, setSelectedAutoChatModel] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   // 默认百智云 Chat 模型列表
   const DEFAULT_BAIZHI_CLOUD_CHAT_MODELS: string[] = [
@@ -41,33 +43,20 @@ const CreateWikiAutoModelConfig = (props: CreateWikiAutoModelConfigProps) => {
 
   const modelList = DEFAULT_BAIZHI_CLOUD_CHAT_MODELS;
 
-  // 如果没有选中模型且有可用模型，默认选择第一个
+  // 如果没有选中模型且有可用模型,默认选择第一个
   useEffect(() => {
     if (modelList.length && !selectedAutoChatModel) {
       setSelectedAutoChatModel(modelList[0]);
     }
   }, [modelList, selectedAutoChatModel]);
 
-  const handleSaveAutoConfig = async () => {
-    if (!autoConfigApiKey.trim()) {
-      message.warning('请填写 API Key');
-      return;
-    }
-    try {
-      setIsSaving(true);
-      await postApiV1ModelAutoMode({
-        APIKey: autoConfigApiKey.trim(),
-        ChatModel: selectedAutoChatModel,
-      });
-      message.success('保存成功');
-      getModelList(); // 刷新模型列表
-      onCloseModal();
-    } catch (err) {
-      message.error('保存失败');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // 暴露给父组件的方法
+  useImperativeHandle(ref, () => ({
+    getFormData: () => ({
+      apiKey: autoConfigApiKey,
+      selectedModel: selectedAutoChatModel,
+    }),
+  }));
 
   return (
     <Stack
@@ -180,6 +169,6 @@ const CreateWikiAutoModelConfig = (props: CreateWikiAutoModelConfigProps) => {
       </Box>
     </Stack>
   );
-};
+});
 
 export default CreateWikiAutoModelConfig;
