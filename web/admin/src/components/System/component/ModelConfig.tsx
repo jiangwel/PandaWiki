@@ -133,6 +133,8 @@ const ModelConfig = forwardRef<ModelConfigRef, ModelConfigProps>(
           try {
             await postApiV1ModelSwitchMode({ mode: 'auto' });
             setAutoConfigMode(true);
+            setTempMode('auto');
+            setSavedMode('auto');
             setHasAutoSwitched(true);
             getModelList();
           } catch (err) {

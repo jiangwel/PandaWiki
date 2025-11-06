@@ -38,7 +38,6 @@ const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
     useState<GithubComChaitinPandaWikiDomainModelListItem | null>(null);
   const [analysisVLModelData, setAnalysisVLModelData] =
     useState<GithubComChaitinPandaWikiDomainModelListItem | null>(null);
-  const [isAutoMode, setIsAutoMode] = useState(false);
 
   const getModelList = () => {
     getApiV1ModelList().then(res => {

@@ -153,21 +153,15 @@ const CreateWikiModal = () => {
     if (!open) {
       setTimeout(() => {
         setNodeIds([]);
-        // 根据知识库数量设置初始步骤
-        const initialStep = kbList && kbList.length >= 1 ? 1 : 0;
-        setActiveStep(initialStep);
+        setActiveStep(0);
       }, 300);
     }
     dispatch(setIsCreateWikiModalOpen(open));
-  }, [open, kbList]);
+  }, [open]);
 
   useEffect(() => {
     setOpen(kb_c);
-    // 如果知识库列表长度大于等于1，跳过第一步（模型配置）
-    if (kb_c && kbList && kbList.length >= 1) {
-      setActiveStep(1);
-    }
-  }, [kb_c, kbList]);
+  }, [kb_c]);
 
   useEffect(() => {
     if (kbList?.length === 0) setOpen(true);
