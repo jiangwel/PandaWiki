@@ -15,14 +15,14 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useState, useEffect } from 'react';
 
-interface AutoModelConfigProps {
+interface CreateWikiAutoModelConfigProps {
   /** 关闭模态框的回调 */
   onCloseModal: () => void;
   /** 刷新模型列表的回调 */
   getModelList: () => void;
 }
 
-const AutoModelConfig = (props: AutoModelConfigProps) => {
+const CreateWikiAutoModelConfig = (props: CreateWikiAutoModelConfigProps) => {
   const { onCloseModal, getModelList } = props;
 
   const [autoConfigApiKey, setAutoConfigApiKey] = useState('');
@@ -79,6 +79,40 @@ const AutoModelConfig = (props: AutoModelConfigProps) => {
       }}
     >
       <Box>
+        {/* 提示信息 */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 1,
+            p: 1.5,
+            mb: 2,
+            bgcolor: 'rgba(25, 118, 210, 0.08)',
+            borderRadius: '8px',
+            border: '1px solid rgba(25, 118, 210, 0.2)',
+          }}
+        >
+          <Icon
+            type='icon-info-circle'
+            sx={{
+              fontSize: 16,
+              color: 'primary.main',
+              flexShrink: 0,
+              mt: 0.2,
+            }}
+          />
+          <Box
+            sx={{
+              fontSize: 12,
+              lineHeight: 1.6,
+              color: 'text.secondary',
+            }}
+          >
+            通过 API Key 连接百智云提供平台后，PandaWiki
+            会自动配置好系统所需的问答模型、向量模型、文档分析模型、文档分析模型。充分利用平台配置，无需逐个手动配置。
+          </Box>
+        </Box>
+
         <Box
           sx={{
             display: 'flex',
@@ -144,86 +178,8 @@ const AutoModelConfig = (props: AutoModelConfigProps) => {
           }}
         />
       </Box>
-
-      <Box sx={{ mt: 3 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            fontSize: 14,
-            fontWeight: 'bold',
-            color: 'text.primary',
-            mb: 1.5,
-          }}
-        >
-          <Box
-            sx={{
-              width: 3,
-              height: 14,
-              bgcolor: 'primary.main',
-              borderRadius: '2px',
-              mr: 1,
-            }}
-          />
-          模型选择
-        </Box>
-        <Stack direction='row' alignItems='center' gap={2}>
-          <Box sx={{ fontSize: 12, color: 'text.secondary', minWidth: 80 }}>
-            对话模型
-          </Box>
-          <Select
-            size='medium'
-            displayEmpty
-            value={selectedAutoChatModel}
-            onChange={e => setSelectedAutoChatModel(e.target.value as string)}
-            sx={{
-              width: 300,
-              height: '52px',
-              '& .MuiInputBase-root': {
-                borderRadius: '10px',
-                bgcolor: '#F8F8FA',
-                height: '52px',
-              },
-              '& .MuiSelect-select': {
-                height: '52px',
-                lineHeight: '52px',
-                padding: '0 14px',
-                display: 'flex',
-                alignItems: 'center',
-              },
-            }}
-            renderValue={sel =>
-              sel && (sel as string).length ? (sel as string) : '请选择聊天模型'
-            }
-          >
-            {modelList.map((model: string) => (
-              <MenuItem key={model} value={model}>
-                {model}
-              </MenuItem>
-            ))}
-          </Select>
-        </Stack>
-      </Box>
-
-      <Stack direction='row' justifyContent='flex-end' sx={{ mt: 3 }}>
-        <Button
-          variant='outlined'
-          onClick={onCloseModal}
-          sx={{ mr: 1 }}
-          disabled={isSaving}
-        >
-          取消
-        </Button>
-        <Button
-          variant='contained'
-          onClick={handleSaveAutoConfig}
-          loading={isSaving}
-        >
-          保存
-        </Button>
-      </Stack>
     </Stack>
   );
 };
 
-export default AutoModelConfig;
+export default CreateWikiAutoModelConfig;

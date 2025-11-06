@@ -93,6 +93,7 @@ const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
         getModelList={getModelList}
         autoSwitchToAutoMode={true}
         hideDocumentationHint={true}
+        useCreateWikiAutoConfig={true}
       />
     </Box>
   );

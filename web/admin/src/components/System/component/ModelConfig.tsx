@@ -26,6 +26,7 @@ import {
   modelService,
 } from '@/services/modelService';
 import AutoModelConfig from './AutoModelConfig';
+import CreateWikiAutoModelConfig from './CreateWikiAutoModelConfig';
 
 const ModelModal = lazy(() =>
   import('@ctzhian/modelkit').then(
@@ -43,6 +44,7 @@ interface ModelConfigProps {
   getModelList: () => void;
   autoSwitchToAutoMode?: boolean;
   hideDocumentationHint?: boolean;
+  useCreateWikiAutoConfig?: boolean;
 }
 
 const ModelConfig = (props: ModelConfigProps) => {
@@ -57,6 +59,7 @@ const ModelConfig = (props: ModelConfigProps) => {
     getModelList,
     autoSwitchToAutoMode = false,
     hideDocumentationHint = false,
+    useCreateWikiAutoConfig = false,
   } = props;
 
   const [autoConfigMode, setAutoConfigMode] = useState(false);
@@ -201,10 +204,17 @@ const ModelConfig = (props: ModelConfigProps) => {
         </Button>
       </Box>
       {autoConfigMode ? (
-        <AutoModelConfig
-          onCloseModal={onCloseModal}
-          getModelList={getModelList}
-        />
+        useCreateWikiAutoConfig ? (
+          <CreateWikiAutoModelConfig
+            onCloseModal={onCloseModal}
+            getModelList={getModelList}
+          />
+        ) : (
+          <AutoModelConfig
+            onCloseModal={onCloseModal}
+            getModelList={getModelList}
+          />
+        )
       ) : (
         <>
           {/* Chat */}
