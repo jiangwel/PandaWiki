@@ -1484,40 +1484,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/model/auto-mode": {
-            "post": {
-                "description": "update BaiZhiCloud API key and optional chat model",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "model"
-                ],
-                "summary": "update BaiZhiCloud model setting",
-                "parameters": [
-                    {
-                        "description": "update BaiZhiCloud model setting request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.UpdateAutoModelSettingReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/model/check": {
             "post": {
                 "description": "check model",
@@ -7118,6 +7084,14 @@ const docTemplate = `{
                 "mode"
             ],
             "properties": {
+                "auto_mode_api_key": {
+                    "description": "百智云 API Key",
+                    "type": "string"
+                },
+                "chat_model": {
+                    "description": "自定义对话模型名称",
+                    "type": "string"
+                },
                 "mode": {
                     "type": "string",
                     "enum": [
@@ -7208,22 +7182,6 @@ const docTemplate = `{
                 },
                 "settings": {
                     "$ref": "#/definitions/domain.AppSettings"
-                }
-            }
-        },
-        "domain.UpdateAutoModelSettingReq": {
-            "type": "object",
-            "required": [
-                "APIKey"
-            ],
-            "properties": {
-                "APIKey": {
-                    "description": "APIKey 百智云 API 密钥",
-                    "type": "string"
-                },
-                "ChatModel": {
-                    "description": "ChatModel 对话模型，允许为空表示清空为默认",
-                    "type": "string"
                 }
             }
         },

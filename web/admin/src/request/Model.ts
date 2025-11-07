@@ -20,7 +20,6 @@ import {
   DomainResponse,
   DomainSwitchModeReq,
   DomainSwitchModeResp,
-  DomainUpdateAutoModelSettingReq,
   DomainUpdateModelReq,
   GithubComChaitinPandaWikiDomainCheckModelReq,
   GithubComChaitinPandaWikiDomainCheckModelResp,
@@ -67,29 +66,6 @@ export const postApiV1Model = (
     path: `/api/v1/model`,
     method: "POST",
     body: model,
-    type: ContentType.Json,
-    format: "json",
-    ...params,
-  });
-
-/**
- * @description update BaiZhiCloud API key and optional chat model
- *
- * @tags model
- * @name PostApiV1ModelAutoMode
- * @summary update BaiZhiCloud model setting
- * @request POST:/api/v1/model/auto-mode
- * @response `200` `DomainResponse` OK
- */
-
-export const postApiV1ModelAutoMode = (
-  request: DomainUpdateAutoModelSettingReq,
-  params: RequestParams = {},
-) =>
-  httpRequest<DomainResponse>({
-    path: `/api/v1/model/auto-mode`,
-    method: "POST",
-    body: request,
     type: ContentType.Json,
     format: "json",
     ...params,

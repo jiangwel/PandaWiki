@@ -6,8 +6,9 @@ import (
 	"fmt"
 
 	"github.com/cloudwego/eino/schema"
-	"github.com/samber/lo"
 
+	modelkitDomain "github.com/chaitin/ModelKit/v2/domain"
+	modelkit "github.com/chaitin/ModelKit/v2/usecase"
 	"github.com/chaitin/panda-wiki/config"
 	"github.com/chaitin/panda-wiki/consts"
 	"github.com/chaitin/panda-wiki/domain"
@@ -26,9 +27,11 @@ type ModelUsecase struct {
 	ragStore          rag.RAGService
 	kbRepo            *pg.KnowledgeBaseRepository
 	systemSettingRepo *pg.SystemSettingRepo
+	modelkit          *modelkit.ModelKit
 }
 
 func NewModelUsecase(modelRepo *pg.ModelRepository, nodeRepo *pg.NodeRepository, ragRepo *mq.RAGRepository, ragStore rag.RAGService, logger *log.Logger, config *config.Config, kbRepo *pg.KnowledgeBaseRepository, settingRepo *pg.SystemSettingRepo) *ModelUsecase {
+	modelkit := modelkit.NewModelKit(logger.Logger)
 	u := &ModelUsecase{
 		modelRepo:         modelRepo,
 		logger:            logger.WithModule("usecase.model"),
@@ -38,6 +41,7 @@ func NewModelUsecase(modelRepo *pg.ModelRepository, nodeRepo *pg.NodeRepository,
 		ragStore:          ragStore,
 		kbRepo:            kbRepo,
 		systemSettingRepo: settingRepo,
+		modelkit:          modelkit,
 	}
 	return u
 }
@@ -45,16 +49,6 @@ func NewModelUsecase(modelRepo *pg.ModelRepository, nodeRepo *pg.NodeRepository,
 func (u *ModelUsecase) Create(ctx context.Context, model *domain.Model) error {
 	if err := u.modelRepo.Create(ctx, model); err != nil {
 		return err
-	}
-	if model.Type == domain.ModelTypeEmbedding || model.Type == domain.ModelTypeRerank || model.Type == domain.ModelTypeAnalysis || model.Type == domain.ModelTypeAnalysisVL {
-		if id, err := u.ragStore.AddModel(ctx, model); err != nil {
-			return err
-		} else {
-			model.ID = id
-		}
-	}
-	if model.Type == domain.ModelTypeEmbedding {
-		return u.TriggerUpsertRecords(ctx)
 	}
 	return nil
 }
@@ -107,36 +101,6 @@ func (u *ModelUsecase) Update(ctx context.Context, req *domain.UpdateModelReq) e
 	if err := u.modelRepo.Update(ctx, req); err != nil {
 		return err
 	}
-	ragModelTypes := []domain.ModelType{
-		domain.ModelTypeEmbedding,
-		domain.ModelTypeRerank,
-		domain.ModelTypeAnalysis,
-		domain.ModelTypeAnalysisVL,
-	}
-	if lo.Contains(ragModelTypes, req.Type) {
-		updateModel := &domain.Model{
-			ID:       req.ID,
-			Model:    req.Model,
-			Type:     req.Type,
-			BaseURL:  req.BaseURL,
-			APIKey:   req.APIKey,
-			IsActive: true,
-		}
-		if req.Parameters != nil {
-			updateModel.Parameters = *req.Parameters
-		}
-		// update is active flag for analysis models
-		if (req.Type == domain.ModelTypeAnalysis || req.Type == domain.ModelTypeAnalysisVL) && req.IsActive != nil {
-			updateModel.IsActive = *req.IsActive
-		}
-		if err := u.ragStore.UpdateModel(ctx, updateModel); err != nil {
-			return err
-		}
-	}
-	// update all records when embedding model is updated
-	if req.Type == domain.ModelTypeEmbedding {
-		return u.TriggerUpsertRecords(ctx)
-	}
 	return nil
 }
 
@@ -179,30 +143,52 @@ func (u *ModelUsecase) UpdateUsage(ctx context.Context, modelID string, usage *s
 }
 
 func (u *ModelUsecase) SwitchMode(ctx context.Context, req *domain.SwitchModeReq) error {
-	modelModeSetting, err := u.updateAutoModeSettingConfig(ctx, req.Mode, "", "")
+	// 只有配置正确才能切换模式
+	if req.Mode == string(consts.ModelSettingModeAuto) {
+		if req.AutoModeAPIKey == "" {
+			return fmt.Errorf("auto mode api key is required")
+		}
+		modelName := req.ChatModel
+		if modelName == "" {
+			modelName = consts.GetAutoModeDefaultModel(string(domain.ModelTypeChat))
+		}
+		// 检查 API Key 是否有效
+		check, err := u.modelkit.CheckModel(ctx, &modelkitDomain.CheckModelReq{
+			Provider: string(domain.ModelProviderBrandBaiZhiCloud),
+			Model:    modelName,
+			BaseURL:  "https://model-square.app.baizhi.cloud/v1",
+			APIKey:   req.AutoModeAPIKey,
+			Type:     string(domain.ModelTypeChat),
+		})
+		if err != nil {
+			return fmt.Errorf("百智云模型 API Key 检查失败: %w", err)
+		}
+		if check.Error != "" {
+			return fmt.Errorf("百智云模型 API Key 检查失败: %s", check.Error)
+		}
+	} else {
+		needModelTypes := []domain.ModelType{
+			domain.ModelTypeChat,
+			domain.ModelTypeEmbedding,
+			domain.ModelTypeRerank,
+			domain.ModelTypeAnalysis,
+		}
+		for _, modelType := range needModelTypes {
+			if _, err := u.modelRepo.GetModelByType(ctx, modelType); err != nil {
+				return fmt.Errorf("需要配置 %s 模型", modelType)
+			}
+		}
+	}
+
+	modelModeSetting, err := u.updateAutoModeSettingConfig(ctx, req.Mode, req.AutoModeAPIKey, req.ChatModel)
 	if err != nil {
 		return err
 	}
 
-	if err := u.updateRAGModelsByMode(ctx, req.Mode, modelModeSetting.AutoModeAPIKey); err != nil {
-		u.logger.Info("failed to update RAG models by mode", log.String("mode", req.Mode), log.Any("error", err))
-	}
-
-	return nil
+	return u.updateRAGModelsByMode(ctx, req.Mode, modelModeSetting.AutoModeAPIKey)
 }
 
-// UpdateAutoModelSetting 更新百智云模型设置（API Key 与可选的 Chat 模型）
-func (u *ModelUsecase) UpdateAutoModelSetting(ctx context.Context, req *domain.UpdateAutoModelSettingReq) error {
-	// 更新并持久化自动模式配置
-	if _, err := u.updateAutoModeSettingConfig(ctx, string(consts.ModelSettingModeAuto), req.APIKey, req.ChatModel); err != nil {
-		return err
-	}
-
-	// 更新 RAG 模型，使用刚设置的自动模式与 API Key
-	return u.updateRAGModelsByMode(ctx, string(consts.ModelSettingModeAuto), req.APIKey)
-}
-
-// updateAutoModeSettingConfig 读取当前设置并更新为自动模式，然后持久化
+// updateAutoModeSettingConfig 读取当前设置并更新，然后持久化
 func (u *ModelUsecase) updateAutoModeSettingConfig(ctx context.Context, mode, apiKey, chatModel string) (*domain.ModelModeSetting, error) {
 	// 读取当前设置
 	setting, err := u.systemSettingRepo.GetModelModeSetting(ctx, domain.SystemSettingModelMode)
@@ -247,7 +233,7 @@ func (u *ModelUsecase) GetModelModeSetting(ctx context.Context) (domain.ModelMod
 		return domain.ModelModeSetting{}, fmt.Errorf("failed to parse model mode setting: %w", err)
 	}
 	// 无效设置检查
-	if config == (domain.ModelModeSetting{}) || config.Mode == ""{
+	if config == (domain.ModelModeSetting{}) || config.Mode == "" {
 		return domain.ModelModeSetting{}, fmt.Errorf("model mode setting is invalid")
 	}
 	return config, nil

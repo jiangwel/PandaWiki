@@ -167,7 +167,9 @@ type ActivateModelReq struct {
 }
 
 type SwitchModeReq struct {
-	Mode string `json:"mode" validate:"required,oneof=manual auto"`
+	Mode           string `json:"mode" validate:"required,oneof=manual auto"`
+	AutoModeAPIKey string `json:"auto_mode_api_key"` // 百智云 API Key
+	ChatModel      string `json:"chat_model"`        // 自定义对话模型名称
 }
 
 type SwitchModeResp struct {
@@ -179,12 +181,4 @@ type ModelModeSetting struct {
 	Mode           string `json:"mode"`              // 模式: manual 或 auto
 	AutoModeAPIKey string `json:"auto_mode_api_key"` // 百智云 API Key
 	ChatModel      string `json:"chat_model"`        // 自定义对话模型名称
-}
-
-// UpdateAutoModelSettingReq 更新百智云模型配置
-type UpdateAutoModelSettingReq struct {
-	// APIKey 百智云 API 密钥
-	APIKey string `json:"APIKey" validate:"required"`
-	// ChatModel 对话模型，允许为空表示清空为默认
-	ChatModel string `json:"ChatModel"`
 }

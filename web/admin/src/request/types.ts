@@ -1186,6 +1186,10 @@ export interface DomainStatPageReq {
 }
 
 export interface DomainSwitchModeReq {
+  /** 百智云 API Key */
+  auto_mode_api_key?: string;
+  /** 自定义对话模型名称 */
+  chat_model?: string;
   mode: "manual" | "auto";
 }
 
@@ -1223,13 +1227,6 @@ export interface DomainUpdateAppReq {
   kb_id?: string;
   name?: string;
   settings?: DomainAppSettings;
-}
-
-export interface DomainUpdateAutoModelSettingReq {
-  /** APIKey 百智云 API 密钥 */
-  APIKey: string;
-  /** ChatModel 对话模型，允许为空表示清空为默认 */
-  ChatModel?: string;
 }
 
 export interface DomainUpdateKnowledgeBaseReq {

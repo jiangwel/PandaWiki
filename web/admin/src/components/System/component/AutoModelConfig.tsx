@@ -1,5 +1,4 @@
 import Card from '@/components/Card';
-import { postApiV1ModelAutoMode } from '@/request/Model';
 import { Icon, message } from '@ctzhian/ui';
 import {
   Box,
@@ -13,217 +12,261 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 
-interface AutoModelConfigProps {
-  /** 关闭模态框的回调 */
-  onCloseModal: () => void;
-  /** 刷新模型列表的回调 */
-  getModelList: () => void;
+export interface AutoModelConfigRef {
+  getFormData: () => {
+    apiKey: string;
+    selectedModel: string;
+  };
 }
 
-const AutoModelConfig = (props: AutoModelConfigProps) => {
-  const { onCloseModal, getModelList } = props;
+interface AutoModelConfigProps {
+  showTip?: boolean;
+  initialApiKey?: string;
+  initialChatModel?: string;
+  onDataChange?: () => void;
+}
 
-  const [autoConfigApiKey, setAutoConfigApiKey] = useState('');
-  const [selectedAutoChatModel, setSelectedAutoChatModel] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+const AutoModelConfig = forwardRef<AutoModelConfigRef, AutoModelConfigProps>(
+  (props, ref) => {
+    const {
+      showTip = false,
+      initialApiKey = '',
+      initialChatModel = '',
+      onDataChange,
+    } = props;
+    const [autoConfigApiKey, setAutoConfigApiKey] = useState(initialApiKey);
+    const [selectedAutoChatModel, setSelectedAutoChatModel] =
+      useState(initialChatModel);
+    const [showApiKey, setShowApiKey] = useState(false);
 
-  // 默认百智云 Chat 模型列表
-  const DEFAULT_BAIZHI_CLOUD_CHAT_MODELS: string[] = [
-    'deepseek-v3.1',
-    'deepseek-r1',
-    'kimi-k2-0711-preview',
-    'qwen-vl-max-latest',
-    'glm-4.5',
-  ];
+    // 默认百智云 Chat 模型列表
+    const DEFAULT_BAIZHI_CLOUD_CHAT_MODELS: string[] = [
+      'deepseek-v3.1',
+      'deepseek-r1',
+      'kimi-k2-0711-preview',
+      'qwen-vl-max-latest',
+      'glm-4.5',
+    ];
 
-  const modelList = DEFAULT_BAIZHI_CLOUD_CHAT_MODELS;
+    const modelList = DEFAULT_BAIZHI_CLOUD_CHAT_MODELS;
 
-  // 如果没有选中模型且有可用模型，默认选择第一个
-  useEffect(() => {
-    if (modelList.length && !selectedAutoChatModel) {
-      setSelectedAutoChatModel(modelList[0]);
-    }
-  }, [modelList, selectedAutoChatModel]);
+    // 当从父组件接收到新的初始值时，更新状态
+    useEffect(() => {
+      if (initialApiKey) {
+        setAutoConfigApiKey(initialApiKey);
+      }
+    }, [initialApiKey]);
 
-  const handleSaveAutoConfig = async () => {
-    if (!autoConfigApiKey.trim()) {
-      message.warning('请填写 API Key');
-      return;
-    }
-    try {
-      setIsSaving(true);
-      await postApiV1ModelAutoMode({
-        APIKey: autoConfigApiKey.trim(),
-        ChatModel: selectedAutoChatModel,
-      });
-      message.success('保存成功');
-      getModelList(); // 刷新模型列表
-      onCloseModal();
-    } catch (err) {
-      message.error('保存失败');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    useEffect(() => {
+      if (initialChatModel) {
+        setSelectedAutoChatModel(initialChatModel);
+      }
+    }, [initialChatModel]);
 
-  return (
-    <Stack
-      sx={{
-        flex: 1,
-        p: 2,
-        overflow: 'hidden',
-        overflowY: 'auto',
-      }}
-    >
-      <Box>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            fontSize: 14,
-            fontWeight: 'bold',
-            color: 'text.primary',
-            mb: 1.5,
-          }}
-        >
+    // 如果没有选中模型且有可用模型,默认选择第一个
+    useEffect(() => {
+      if (modelList.length && !selectedAutoChatModel) {
+        setSelectedAutoChatModel(modelList[0]);
+      }
+    }, [modelList, selectedAutoChatModel]);
+
+    // 暴露给父组件的方法
+    useImperativeHandle(ref, () => ({
+      getFormData: () => ({
+        apiKey: autoConfigApiKey,
+        selectedModel: selectedAutoChatModel,
+      }),
+    }));
+
+    return (
+      <Stack
+        sx={{
+          flex: 1,
+          p: 2,
+          overflow: 'hidden',
+          overflowY: 'auto',
+        }}
+      >
+        <Box>
+          {/* 提示信息 */}
+          {showTip && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1,
+                p: 1.5,
+                mb: 2,
+                bgcolor: 'rgba(25, 118, 210, 0.08)',
+                borderRadius: '8px',
+                border: '1px solid rgba(25, 118, 210, 0.2)',
+              }}
+            >
+              <Icon
+                type='icon-info-circle'
+                sx={{
+                  fontSize: 16,
+                  color: 'primary.main',
+                  flexShrink: 0,
+                  mt: 0.2,
+                }}
+              />
+              <Box
+                sx={{
+                  fontSize: 12,
+                  lineHeight: 1.6,
+                  color: 'text.secondary',
+                }}
+              >
+                通过 API Key 连接百智云提供平台后，PandaWiki
+                会自动配置好系统所需的问答模型、向量模型、文档分析模型、文档分析模型。充分利用平台配置，无需逐个手动配置。
+              </Box>
+            </Box>
+          )}
+
           <Box
             sx={{
-              width: 3,
-              height: 14,
-              bgcolor: 'primary.main',
-              borderRadius: '2px',
-              mr: 1,
-            }}
-          />
-          API Key
-        </Box>
-        <Stack
-          direction={'row'}
-          alignItems={'center'}
-          justifyContent={'flex-end'}
-        >
-          <Box
-            component='a'
-            href='https://model-square.app.baizhi.cloud/token'
-            target='_blank'
-            sx={{
-              color: 'primary.main',
-              fontSize: 12,
               display: 'flex',
               alignItems: 'center',
-              gap: 0.5,
+              fontSize: 14,
+              fontWeight: 'bold',
+              color: 'text.primary',
+              mb: 1.5,
             }}
           >
-            <Icon type='icon-key' sx={{ fontSize: 14 }} />
-            获取百智云 API Key
+            <Box
+              sx={{
+                width: 3,
+                height: 14,
+                bgcolor: 'primary.main',
+                borderRadius: '2px',
+                mr: 1,
+              }}
+            />
+            API Key
           </Box>
-        </Stack>
-        <TextField
-          fullWidth
-          size='medium'
-          type={showApiKey ? 'text' : 'password'}
-          value={autoConfigApiKey}
-          onChange={e => setAutoConfigApiKey(e.target.value)}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position='end'>
-                <IconButton size='small' onClick={() => setShowApiKey(s => !s)}>
-                  {showApiKey ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            '& .MuiInputBase-root': {
-              borderRadius: '10px',
-              height: '52px',
-            },
-          }}
-        />
-      </Box>
-
-      <Box sx={{ mt: 3 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            fontSize: 14,
-            fontWeight: 'bold',
-            color: 'text.primary',
-            mb: 1.5,
-          }}
-        >
-          <Box
-            sx={{
-              width: 3,
-              height: 14,
-              bgcolor: 'primary.main',
-              borderRadius: '2px',
-              mr: 1,
-            }}
-          />
-          模型选择
-        </Box>
-        <Stack direction='row' alignItems='center' gap={2}>
-          <Box sx={{ fontSize: 12, color: 'text.secondary', minWidth: 80 }}>
-            对话模型
-          </Box>
-          <Select
-            size='medium'
-            displayEmpty
-            value={selectedAutoChatModel}
-            onChange={e => setSelectedAutoChatModel(e.target.value as string)}
-            sx={{
-              width: 300,
-              height: '52px',
-              '& .MuiInputBase-root': {
-                borderRadius: '10px',
-                bgcolor: '#F8F8FA',
-                height: '52px',
-              },
-              '& .MuiSelect-select': {
-                height: '52px',
-                lineHeight: '52px',
-                padding: '0 14px',
+          <Stack
+            direction={'row'}
+            alignItems={'center'}
+            justifyContent={'flex-end'}
+          >
+            <Box
+              component='a'
+              href='https://model-square.app.baizhi.cloud/token'
+              target='_blank'
+              sx={{
+                color: 'primary.main',
+                fontSize: 12,
                 display: 'flex',
                 alignItems: 'center',
+                gap: 0.5,
+              }}
+            >
+              <Icon type='icon-key' sx={{ fontSize: 14 }} />
+              获取百智云 API Key
+            </Box>
+          </Stack>
+          <TextField
+            fullWidth
+            size='medium'
+            type={showApiKey ? 'text' : 'password'}
+            value={autoConfigApiKey}
+            onChange={e => {
+              setAutoConfigApiKey(e.target.value);
+              onDataChange?.();
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position='end'>
+                  <IconButton
+                    size='small'
+                    onClick={() => setShowApiKey(s => !s)}
+                  >
+                    {showApiKey ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiInputBase-root': {
+                borderRadius: '10px',
+                height: '52px',
               },
             }}
-            renderValue={sel =>
-              sel && (sel as string).length ? (sel as string) : '请选择聊天模型'
-            }
-          >
-            {modelList.map((model: string) => (
-              <MenuItem key={model} value={model}>
-                {model}
-              </MenuItem>
-            ))}
-          </Select>
-        </Stack>
-      </Box>
+          />
+        </Box>
 
-      <Stack direction='row' justifyContent='flex-end' sx={{ mt: 3 }}>
-        <Button
-          variant='outlined'
-          onClick={onCloseModal}
-          sx={{ mr: 1 }}
-          disabled={isSaving}
-        >
-          取消
-        </Button>
-        <Button
-          variant='contained'
-          onClick={handleSaveAutoConfig}
-          loading={isSaving}
-        >
-          保存
-        </Button>
+        {!showTip && (
+          <Box sx={{ mt: 3 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: 14,
+                fontWeight: 'bold',
+                color: 'text.primary',
+                mb: 1.5,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 3,
+                  height: 14,
+                  bgcolor: 'primary.main',
+                  borderRadius: '2px',
+                  mr: 1,
+                }}
+              />
+              模型选择
+            </Box>
+            <Stack direction='row' alignItems='center' gap={2}>
+              <Box sx={{ fontSize: 12, color: 'text.secondary', minWidth: 80 }}>
+                对话模型
+              </Box>
+              <Select
+                size='medium'
+                displayEmpty
+                value={selectedAutoChatModel}
+                onChange={e => {
+                  setSelectedAutoChatModel(e.target.value as string);
+                  onDataChange?.();
+                }}
+                sx={{
+                  width: 300,
+                  height: '52px',
+                  '& .MuiInputBase-root': {
+                    borderRadius: '10px',
+                    bgcolor: '#F8F8FA',
+                    height: '52px',
+                  },
+                  '& .MuiSelect-select': {
+                    height: '52px',
+                    lineHeight: '52px',
+                    padding: '0 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  },
+                }}
+                renderValue={sel =>
+                  sel && (sel as string).length
+                    ? (sel as string)
+                    : '请选择聊天模型'
+                }
+              >
+                {modelList.map((model: string) => (
+                  <MenuItem key={model} value={model}>
+                    {model}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Stack>
+          </Box>
+        )}
       </Stack>
-    </Stack>
-  );
-};
+    );
+  },
+);
 
 export default AutoModelConfig;

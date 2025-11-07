@@ -8,11 +8,7 @@ import React, {
 import { Box } from '@mui/material';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { setModelList } from '@/store/slices/config';
-import {
-  getApiV1ModelList,
-  getApiV1ModelModeSetting,
-  postApiV1ModelAutoMode,
-} from '@/request/Model';
+import { getApiV1ModelList, getApiV1ModelModeSetting } from '@/request/Model';
 import { GithubComChaitinPandaWikiDomainModelListItem } from '@/request/types';
 import ModelConfig, {
   ModelConfigRef,
@@ -75,20 +71,9 @@ const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
 
       // 如果是 auto 模式,检查是否配置了 API key
       if (modeSetting?.mode === 'auto') {
-        // 从子组件获取表单数据
-        const formData = modelConfigRef.current?.getAutoConfigFormData();
-
-        if (!formData || !formData.apiKey) {
-          return Promise.reject(new Error('请输入 API Key'));
+        if (modeSetting.auto_mode_api_key === '') {
+          return Promise.reject(new Error('请完成模型配置'));
         }
-
-        // 调用自动配置接口
-        await postApiV1ModelAutoMode({
-          APIKey: formData.apiKey,
-        });
-
-        // 刷新模型列表
-        await getModelList();
       } else {
         // 手动模式检查
         if (
@@ -125,9 +110,8 @@ const Step1Model: React.FC<Step1ModelProps> = ({ ref }) => {
         analysisModelData={analysisModelData}
         analysisVLModelData={analysisVLModelData}
         getModelList={getModelList}
-        autoSwitchToAutoMode={true}
         hideDocumentationHint={true}
-        useCreateWikiAutoConfig={true}
+        showTip={true}
       />
     </Box>
   );

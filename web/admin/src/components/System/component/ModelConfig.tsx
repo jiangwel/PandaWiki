@@ -33,10 +33,7 @@ import {
   convertLocalModelToUIModel,
   modelService,
 } from '@/services/modelService';
-import AutoModelConfig from './AutoModelConfig';
-import CreateWikiAutoModelConfig, {
-  CreateWikiAutoModelConfigRef,
-} from './CreateWikiAutoModelConfig';
+import AutoModelConfig, { AutoModelConfigRef } from './AutoModelConfig';
 
 const ModelModal = lazy(() =>
   import('@ctzhian/modelkit').then(
@@ -58,7 +55,7 @@ interface ModelConfigProps {
   getModelList: () => void;
   autoSwitchToAutoMode?: boolean;
   hideDocumentationHint?: boolean;
-  useCreateWikiAutoConfig?: boolean;
+  showTip?: boolean;
 }
 
 const ModelConfig = forwardRef<ModelConfigRef, ModelConfigProps>(
@@ -74,7 +71,7 @@ const ModelConfig = forwardRef<ModelConfigRef, ModelConfigProps>(
       getModelList,
       autoSwitchToAutoMode = false,
       hideDocumentationHint = false,
-      useCreateWikiAutoConfig = false,
+      showTip = false,
     } = props;
 
     const [autoConfigMode, setAutoConfigMode] = useState(false);
@@ -82,8 +79,11 @@ const ModelConfig = forwardRef<ModelConfigRef, ModelConfigProps>(
     const [tempMode, setTempMode] = useState<'auto' | 'manual'>('manual');
     const [savedMode, setSavedMode] = useState<'auto' | 'manual'>('manual');
     const [isSaving, setIsSaving] = useState(false);
+    const [initialApiKey, setInitialApiKey] = useState('');
+    const [initialChatModel, setInitialChatModel] = useState('');
+    const [hasConfigChanged, setHasConfigChanged] = useState(false);
 
-    const autoConfigRef = useRef<CreateWikiAutoModelConfigRef>(null);
+    const autoConfigRef = useRef<AutoModelConfigRef>(null);
 
     const [addOpen, setAddOpen] = useState(false);
     const [addType, setAddType] = useState<
@@ -107,7 +107,7 @@ const ModelConfig = forwardRef<ModelConfigRef, ModelConfigProps>(
       }
     };
 
-    // 组件挂载时，获取当前配置
+    // 组件挂载时,获取当前配置
     useEffect(() => {
       const fetchModeSetting = async () => {
         try {
@@ -118,6 +118,14 @@ const ModelConfig = forwardRef<ModelConfigRef, ModelConfigProps>(
             setAutoConfigMode(isAuto);
             setTempMode(mode);
             setSavedMode(mode);
+
+            // 保存 API Key 和 Chat Model
+            if (setting.auto_mode_api_key) {
+              setInitialApiKey(setting.auto_mode_api_key);
+            }
+            if (setting.chat_model) {
+              setInitialChatModel(setting.chat_model);
+            }
           }
         } catch (err) {
           console.error('获取模型配置失败:', err);
@@ -158,17 +166,42 @@ const ModelConfig = forwardRef<ModelConfigRef, ModelConfigProps>(
     const handleSave = async () => {
       setIsSaving(true);
       try {
-        await postApiV1ModelSwitchMode({
+        let requestData: {
+          mode: 'auto' | 'manual';
+          auto_mode_api_key?: string;
+          chat_model?: string;
+        } = {
           mode: tempMode,
-        });
+        };
+
+        // 如果是自动模式，获取用户输入的 API Key 和 model
+        if (tempMode === 'auto' && autoConfigRef.current) {
+          const formData = autoConfigRef.current.getFormData();
+          if (formData) {
+            requestData.auto_mode_api_key = formData.apiKey;
+            requestData.chat_model = formData.selectedModel;
+          }
+        }
+
+        await postApiV1ModelSwitchMode(requestData);
         setSavedMode(tempMode);
         setAutoConfigMode(tempMode === 'auto');
+        setHasConfigChanged(false); // 重置变更标记
+
+        // 更新保存的初始值
+        if (tempMode === 'auto' && autoConfigRef.current) {
+          const formData = autoConfigRef.current.getFormData();
+          if (formData) {
+            setInitialApiKey(formData.apiKey);
+            setInitialChatModel(formData.selectedModel);
+          }
+        }
+
         message.success(
           tempMode === 'auto' ? '已切换为自动配置模式' : '已切换为手动配置模式',
         );
         getModelList(); // 刷新模型列表
       } catch (err) {
-        message.error('切换模式失败');
       } finally {
         setIsSaving(false);
       }
@@ -207,6 +240,8 @@ const ModelConfig = forwardRef<ModelConfigRef, ModelConfigProps>(
                 setTempMode(newMode);
                 // 立即切换显示的组件
                 setAutoConfigMode(newMode === 'auto');
+                // 切换模式时重置变更标记
+                setHasConfigChanged(false);
               }}
             >
               <FormControlLabel
@@ -221,26 +256,26 @@ const ModelConfig = forwardRef<ModelConfigRef, ModelConfigProps>(
               />
             </RadioGroup>
           </Box>
-          <Button
-            variant='contained'
-            size='small'
-            loading={isSaving}
-            disabled={tempMode === savedMode}
-            onClick={handleSave}
-            sx={{ mt: 3 }}
-          >
-            保存
-          </Button>
+          {(tempMode !== savedMode || hasConfigChanged) && (
+            <Button
+              variant='contained'
+              size='small'
+              loading={isSaving}
+              onClick={handleSave}
+              sx={{ mt: 3 }}
+            >
+              应用
+            </Button>
+          )}
         </Box>
         {autoConfigMode ? (
-          useCreateWikiAutoConfig ? (
-            <CreateWikiAutoModelConfig ref={autoConfigRef} />
-          ) : (
-            <AutoModelConfig
-              onCloseModal={onCloseModal}
-              getModelList={getModelList}
-            />
-          )
+          <AutoModelConfig
+            ref={autoConfigRef}
+            showTip={showTip}
+            initialApiKey={initialApiKey}
+            initialChatModel={initialChatModel}
+            onDataChange={() => setHasConfigChanged(true)}
+          />
         ) : (
           <>
             {/* Chat */}
@@ -1295,7 +1330,11 @@ const ModelConfig = forwardRef<ModelConfigRef, ModelConfigProps>(
                           ? convertLocalModelToUIModel(analysisVLModelData)
                           : null
               }
-              onClose={() => setAddOpen(false)}
+              onClose={() => {
+                setAddOpen(false);
+                // 关闭模态框时标记为已变更(假设用户可能已修改)
+                setHasConfigChanged(true);
+              }}
               refresh={getModelList}
               modelService={modelService}
               language='zh-CN'
