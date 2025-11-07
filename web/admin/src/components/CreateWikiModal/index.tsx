@@ -173,10 +173,7 @@ const CreateWikiModal = () => {
       onCancel={onCancel}
       title='创建 Wiki 站点'
       width={880}
-      closable={
-        (activeStep === 0 && (kbList || []).length > 0) ||
-        (activeStep === 1 && (kbList || []).length >= 1)
-      }
+      closable={activeStep === 0 && (kbList || []).length > 0}
       showCancel={false}
       okText={activeStep === steps.length - 1 ? '关闭' : '下一步'}
       // cancelText='上一步'

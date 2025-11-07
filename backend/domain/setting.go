@@ -8,7 +8,6 @@ import (
 const (
 	SettingKeySystemPrompt = "system_prompt"
 	SettingBlockWords      = "block_words"
-	SettingModelMode       = "model_setting_mode"
 )
 
 // table: settings
