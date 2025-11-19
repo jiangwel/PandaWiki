@@ -17,5 +17,5 @@ image: build
 	  .
 
 save: image
-	docker save -o /tmp/panda-wiki-admin_frontend.tar panda-wiki-admin/frontend:main
+	docker save -o ./panda-wiki-admin_frontend.tar panda-wiki-admin/frontend:main
 		

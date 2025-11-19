@@ -6,6 +6,5 @@ import (
 
 var ProviderSet = wire.NewSet(
 	NewEcho,
-	NewMCPServer,	
 	wire.Struct(new(HTTPServer), "*"),
 )

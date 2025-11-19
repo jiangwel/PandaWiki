@@ -1,0 +1,130 @@
+package v1
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/labstack/echo/v4"
+	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/server"
+
+	"github.com/chaitin/panda-wiki/domain"
+	"github.com/chaitin/panda-wiki/log"
+	"github.com/chaitin/panda-wiki/usecase"
+)
+
+type MCPHandler struct {
+	logger      *log.Logger
+	httpServer  *server.StreamableHTTPServer
+	chatUsecase *usecase.ChatUsecase
+}
+
+// contextKey is used to store kbID in context
+type contextKey string
+
+const kbIDContextKey contextKey = "kb_id"
+
+func NewMCPHandler(echo *echo.Echo, logger *log.Logger, chatUsecase *usecase.ChatUsecase) *MCPHandler {
+	mcpServer := server.NewMCPServer("PandaWiki MCP Server", "1.0.0",
+		server.WithToolCapabilities(true),
+		server.WithLogging(),
+		server.WithInstructions("当用户提问时, 使用pandawiki_conversation工具从PandaWiki知识库中检索答案并进行回答"),
+	)
+
+	h := &MCPHandler{
+		logger:      logger.WithModule("handler.v1.mcp"),
+		chatUsecase: chatUsecase,
+	}
+
+	// Register tools
+	h.registerTools(mcpServer)
+
+	// Create HTTP server with context function to extract kbID from header
+	h.httpServer = server.NewStreamableHTTPServer(mcpServer,
+		server.WithHTTPContextFunc(func(ctx context.Context, r *http.Request) context.Context {
+			kbID := r.Header.Get("X-KB-ID")
+			return context.WithValue(ctx, kbIDContextKey, kbID)
+		}),
+	)
+
+	echo.Any("/mcp", h.MCPHandler)
+	return h
+}
+
+func (h *MCPHandler) MCPHandler(c echo.Context) error {
+	h.httpServer.ServeHTTP(c.Response(), c.Request())
+	return nil
+}
+
+func (h *MCPHandler) registerTools(mcpServer *server.MCPServer) {
+	// Conversation tools
+	mcpServer.AddTool(
+		mcp.NewTool("chat_with_pandawiki",
+			mcp.WithDescription("使用此工具与 PandaWiki 对话, 从其人工智能知识库中检索答案"),
+			mcp.WithString("message", mcp.Required(), mcp.Description("User message")),
+		),
+		h.handleChat,
+	)
+}
+
+func (h *MCPHandler) handleChat(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	message := req.GetString("message", "")
+	if message == "" {
+		return nil, fmt.Errorf("message is required")
+	}
+
+	// Get kbID from context (injected by HTTPContextFunc)
+	kbID, ok := ctx.Value(kbIDContextKey).(string)
+	if !ok || kbID == "" {
+		return nil, fmt.Errorf("kb_id is required")
+	}
+
+	// Create chat request
+	chatReq := &domain.ChatRequest{
+		KBID:    kbID,
+		Message: message,
+		AppType: domain.AppTypeMcpServer, // Use MCP server app type
+	}
+
+	// Call chat usecase
+	eventCh, err := h.chatUsecase.Chat(ctx, chatReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start chat: %w", err)
+	}
+
+	// Collect all events from the channel
+	var responseBuilder strings.Builder
+	for event := range eventCh {
+		if event.Type == "error" {
+			return nil, fmt.Errorf("chat error: %s", event.Content)
+		}
+		if event.Type == "data" {
+			// Accumulate response content
+			responseBuilder.WriteString(event.Content)
+		}
+		// Stop processing if we encounter done or error
+		if event.Type == "done" || event.Type == "error" {
+			break
+		}
+	}
+
+	response := responseBuilder.String()
+	if response == "" {
+		return nil, fmt.Errorf("no response received from chat")
+	}
+
+	// Return the complete response
+	result := map[string]interface{}{
+		"response": response,
+	}
+
+	data, err := json.Marshal(result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return mcp.NewToolResultText(string(data)), nil
+}

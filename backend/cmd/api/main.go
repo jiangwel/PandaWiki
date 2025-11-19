@@ -22,14 +22,6 @@ func main() {
 	if err := setup.CheckInitCert(); err != nil {
 		panic(err)
 	}
-	go func() {
-		app.Logger.Info(fmt.Sprintf("Starting MCP server on port %d", app.Config.MCP.Port))
-		if err := app.HTTPServer.MCPServer.Start(fmt.Sprintf(":%d", app.Config.MCP.Port)); err != nil {
-			app.Logger.Error("Failed to start MCP server", "error", err)
-		} else {
-			app.Logger.Info(fmt.Sprintf("MCP server started on port %d", app.Config.MCP.Port))
-		}
-	}()
 	port := app.Config.HTTP.Port
 	app.Logger.Info(fmt.Sprintf("Starting server on port %d", port))
 	app.HTTPServer.Echo.Logger.Fatal(app.HTTPServer.Echo.Start(fmt.Sprintf(":%d", port)))
