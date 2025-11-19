@@ -24,6 +24,7 @@ const (
 	AppTypeOpenAIAPI
 	AppTypeWecomAIBot
 	AppTypeLarkBot
+	AppTypeMcpServer
 )
 
 var AppTypes = []AppType{
@@ -38,6 +39,7 @@ var AppTypes = []AppType{
 	AppTypeOpenAIAPI,
 	AppTypeWecomAIBot,
 	AppTypeLarkBot,
+	AppTypeMcpServer,
 }
 
 func (t AppType) ToSourceType() consts.SourceType {
@@ -166,10 +168,18 @@ type AppSettings struct {
 	CopySetting        consts.CopySetting      `json:"copy_setting" validate:"omitempty,oneof='' append disabled"`
 	ContributeSettings ContributeSettings      `json:"contribute_settings"`
 	HomePageSetting    consts.HomePageSetting  `json:"home_page_setting"`
+	// MCP Server Settings
+	MCPServerSettings MCPServerSettings `json:"mcp_server_settings,omitempty"`
 }
 
 type WebAppLandingTheme struct {
 	Name string `json:"name"`
+}
+
+type MCPServerSettings struct {
+	IsEnabled     bool   `json:"is_enabled"`
+	IsUseApiToken bool   `json:"is_use_api_token"`
+	KBID          string `json:"kb_id"`
 }
 
 type LarkBotSettings struct {

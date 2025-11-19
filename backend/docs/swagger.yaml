@@ -763,6 +763,7 @@ definitions:
     - 9
     - 10
     - 11
+    - 12
     format: int32
     type: integer
     x-enum-varnames:
@@ -777,6 +778,7 @@ definitions:
     - AppTypeOpenAIAPI
     - AppTypeWecomAIBot
     - AppTypeLarkBot
+    - AppTypeMcpServer
   domain.AuthUserInfo:
     properties:
       avatar_url:

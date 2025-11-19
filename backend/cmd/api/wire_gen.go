@@ -47,12 +47,45 @@ func createApp() (*App, error) {
 		return nil, err
 	}
 	echo := http.NewEcho(logger, configConfig, readOnlyMiddleware, sessionMiddleware)
-	httpServer := &http.HTTPServer{
-		Echo: echo,
+	ragService, err := rag.NewRAGService(configConfig, logger)
+	if err != nil {
+		return nil, err
 	}
 	db, err := pg.NewDB(configConfig)
 	if err != nil {
 		return nil, err
+	}
+	conversationRepository := pg2.NewConversationRepository(db, logger)
+	knowledgeBaseRepository := pg2.NewKnowledgeBaseRepository(db, configConfig, logger, ragService)
+	nodeRepository := pg2.NewNodeRepository(db, logger)
+	modelRepository := pg2.NewModelRepository(db, logger)
+	promptRepo := pg2.NewPromptRepo(db, logger)
+	llmUsecase := usecase.NewLLMUsecase(configConfig, ragService, conversationRepository, knowledgeBaseRepository, nodeRepository, modelRepository, promptRepo, logger)
+	geoRepo := cache2.NewGeoCache(cacheCache, db, logger)
+	ipdbIPDB, err := ipdb.NewIPDB(configConfig, logger)
+	if err != nil {
+		return nil, err
+	}
+	ipAddressRepo := ipdb2.NewIPAddressRepo(ipdbIPDB, logger)
+	authRepo := pg2.NewAuthRepo(db, logger, cacheCache)
+	conversationUsecase := usecase.NewConversationUsecase(conversationRepository, nodeRepository, geoRepo, logger, ipAddressRepo, authRepo)
+	mqProducer, err := mq.NewMQProducer(configConfig, logger)
+	if err != nil {
+		return nil, err
+	}
+	ragRepository := mq2.NewRAGRepository(mqProducer)
+	systemSettingRepo := pg2.NewSystemSettingRepo(db, logger)
+	modelUsecase := usecase.NewModelUsecase(modelRepository, nodeRepository, ragRepository, ragService, logger, configConfig, knowledgeBaseRepository, systemSettingRepo)
+	appRepository := pg2.NewAppRepository(db, logger)
+	blockWordRepo := pg2.NewBlockWordRepo(db, logger)
+	chatUsecase, err := usecase.NewChatUsecase(llmUsecase, knowledgeBaseRepository, conversationUsecase, modelUsecase, appRepository, blockWordRepo, authRepo, logger)
+	if err != nil {
+		return nil, err
+	}
+	streamableHTTPServer := http.NewMCPServer(chatUsecase, logger)
+	httpServer := &http.HTTPServer{
+		Echo:      echo,
+		MCPServer: streamableHTTPServer,
 	}
 	userAccessRepository := pg2.NewUserAccessRepository(db, logger)
 	apiTokenRepo := pg2.NewAPITokenRepo(db, logger, cacheCache)
@@ -60,17 +93,6 @@ func createApp() (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	ragService, err := rag.NewRAGService(configConfig, logger)
-	if err != nil {
-		return nil, err
-	}
-	knowledgeBaseRepository := pg2.NewKnowledgeBaseRepository(db, configConfig, logger, ragService)
-	nodeRepository := pg2.NewNodeRepository(db, logger)
-	mqProducer, err := mq.NewMQProducer(configConfig, logger)
-	if err != nil {
-		return nil, err
-	}
-	ragRepository := mq2.NewRAGRepository(mqProducer)
 	userRepository := pg2.NewUserRepository(db, logger)
 	kbRepo := cache2.NewKBRepo(cacheCache)
 	knowledgeBaseUsecase, err := usecase.NewKnowledgeBaseUsecase(knowledgeBaseRepository, nodeRepository, ragRepository, userRepository, ragService, kbRepo, logger, configConfig)
@@ -85,33 +107,13 @@ func createApp() (*App, error) {
 		return nil, err
 	}
 	userHandler := v1.NewUserHandler(echo, baseHandler, logger, userUsecase, authMiddleware, configConfig)
-	conversationRepository := pg2.NewConversationRepository(db, logger)
-	modelRepository := pg2.NewModelRepository(db, logger)
-	promptRepo := pg2.NewPromptRepo(db, logger)
-	llmUsecase := usecase.NewLLMUsecase(configConfig, ragService, conversationRepository, knowledgeBaseRepository, nodeRepository, modelRepository, promptRepo, logger)
 	knowledgeBaseHandler := v1.NewKnowledgeBaseHandler(baseHandler, echo, knowledgeBaseUsecase, llmUsecase, authMiddleware, logger)
-	appRepository := pg2.NewAppRepository(db, logger)
 	minioClient, err := s3.NewMinioClient(configConfig)
 	if err != nil {
 		return nil, err
 	}
-	authRepo := pg2.NewAuthRepo(db, logger, cacheCache)
-	systemSettingRepo := pg2.NewSystemSettingRepo(db, logger)
-	modelUsecase := usecase.NewModelUsecase(modelRepository, nodeRepository, ragRepository, ragService, logger, configConfig, knowledgeBaseRepository, systemSettingRepo)
 	nodeUsecase := usecase.NewNodeUsecase(nodeRepository, appRepository, ragRepository, userRepository, knowledgeBaseRepository, llmUsecase, ragService, logger, minioClient, modelRepository, authRepo, modelUsecase)
 	nodeHandler := v1.NewNodeHandler(baseHandler, echo, nodeUsecase, authMiddleware, logger)
-	geoRepo := cache2.NewGeoCache(cacheCache, db, logger)
-	ipdbIPDB, err := ipdb.NewIPDB(configConfig, logger)
-	if err != nil {
-		return nil, err
-	}
-	ipAddressRepo := ipdb2.NewIPAddressRepo(ipdbIPDB, logger)
-	conversationUsecase := usecase.NewConversationUsecase(conversationRepository, nodeRepository, geoRepo, logger, ipAddressRepo, authRepo)
-	blockWordRepo := pg2.NewBlockWordRepo(db, logger)
-	chatUsecase, err := usecase.NewChatUsecase(llmUsecase, knowledgeBaseRepository, conversationUsecase, modelUsecase, appRepository, blockWordRepo, authRepo, logger)
-	if err != nil {
-		return nil, err
-	}
 	appUsecase := usecase.NewAppUsecase(appRepository, authRepo, nodeRepository, nodeUsecase, logger, configConfig, chatUsecase, cacheCache)
 	appHandler := v1.NewAppHandler(echo, baseHandler, logger, authMiddleware, appUsecase, modelUsecase, conversationUsecase, configConfig)
 	fileUsecase := usecase.NewFileUsecase(logger, minioClient, configConfig)

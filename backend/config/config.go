@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Log           LogConfig    `mapstructure:"log"`
 	HTTP          HTTPConfig   `mapstructure:"http"`
+	MCP           MCPConfig    `mapstructure:"mcp"`
 	AdminPassword string       `mapstructure:"admin_password"`
 	PG            PGConfig     `mapstructure:"pg"`
 	MQ            MQConfig     `mapstructure:"mq"`
@@ -28,6 +29,10 @@ type LogConfig struct {
 }
 
 type HTTPConfig struct {
+	Port int `mapstructure:"port"`
+}
+
+type MCPConfig struct {
 	Port int `mapstructure:"port"`
 }
 
@@ -94,6 +99,9 @@ func NewConfig() (*Config, error) {
 		AdminPassword: "",
 		HTTP: HTTPConfig{
 			Port: 8000,
+		},
+		MCP: MCPConfig{
+			Port: 8001,
 		},
 		PG: PGConfig{
 			DSN: "host=panda-wiki-postgres user=panda-wiki password=panda-wiki-secret dbname=panda-wiki port=5432 sslmode=disable TimeZone=Asia/Shanghai",

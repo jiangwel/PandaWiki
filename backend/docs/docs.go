@@ -5050,7 +5050,8 @@ const docTemplate = `{
                 8,
                 9,
                 10,
-                11
+                11,
+                12
             ],
             "x-enum-varnames": [
                 "AppTypeWeb",
@@ -5063,7 +5064,8 @@ const docTemplate = `{
                 "AppTypeWechatOfficialAccount",
                 "AppTypeOpenAIAPI",
                 "AppTypeWecomAIBot",
-                "AppTypeLarkBot"
+                "AppTypeLarkBot",
+                "AppTypeMcpServer"
             ]
         },
         "domain.AuthUserInfo": {
