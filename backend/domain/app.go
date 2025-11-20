@@ -66,6 +66,8 @@ func (t AppType) ToSourceType() consts.SourceType {
 		return consts.SourceTypeOpenAIAPI
 	case AppTypeLarkBot:
 		return consts.SourceTypeLarkBot
+	case AppTypeMcpServer:
+		return consts.SourceTypeMcpServer
 	default:
 		return ""
 	}
@@ -177,9 +179,8 @@ type WebAppLandingTheme struct {
 }
 
 type MCPServerSettings struct {
-	IsEnabled     bool   `json:"is_enabled"`
-	IsUseApiToken bool   `json:"is_use_api_token"`
-	KBID          string `json:"kb_id"`
+	IsEnabled  bool       `json:"is_enabled"`
+	SampleAuth SimpleAuth `json:"sample_auth"`
 }
 
 type LarkBotSettings struct {
@@ -541,10 +542,12 @@ type AppSettingsResp struct {
 	OpenAIAPIBotSettings OpenAIAPIBotSettings `json:"openai_api_bot_settings"`
 	// Disclaimer Settings
 	DisclaimerSettings DisclaimerSettings `json:"disclaimer_settings"`
-	// WebApp Landing Settings
-	WebAppLandingConfigs []WebAppLandingConfigResp `json:"web_app_landing_configs,omitempty"`
-	WebAppLandingTheme   WebAppLandingTheme        `json:"web_app_landing_theme"`
-	HomePageSetting      consts.HomePageSetting    `json:"home_page_setting"`
+    // WebApp Landing Settings
+    WebAppLandingConfigs []WebAppLandingConfigResp `json:"web_app_landing_configs,omitempty"`
+    WebAppLandingTheme   WebAppLandingTheme        `json:"web_app_landing_theme"`
+    HomePageSetting      consts.HomePageSetting    `json:"home_page_setting"`
+    // MCP Server Settings
+    MCPServerSettings MCPServerSettings `json:"mcp_server_settings,omitempty"`
 }
 
 type WebAppLandingConfigResp struct {

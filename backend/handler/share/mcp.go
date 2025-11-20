@@ -1,4 +1,4 @@
-package v1
+package share
 
 import (
 	"context"
@@ -12,62 +12,94 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 
 	"github.com/chaitin/panda-wiki/domain"
+	"github.com/chaitin/panda-wiki/handler"
 	"github.com/chaitin/panda-wiki/log"
 	"github.com/chaitin/panda-wiki/usecase"
 )
 
 type MCPHandler struct {
+	*handler.BaseHandler
 	logger      *log.Logger
 	httpServer  *server.StreamableHTTPServer
 	chatUsecase *usecase.ChatUsecase
+	appUsecase  *usecase.AppUsecase
 }
 
 // contextKey is used to store kbID in context
 type contextKey string
 
 const kbIDContextKey contextKey = "kb_id"
+const authContextKey contextKey = "authorization"
 
-func NewMCPHandler(echo *echo.Echo, logger *log.Logger, chatUsecase *usecase.ChatUsecase) *MCPHandler {
-	mcpServer := server.NewMCPServer("PandaWiki MCP Server", "1.0.0",
-		server.WithToolCapabilities(true),
-		server.WithLogging(),
-		server.WithInstructions("当用户提问时, 使用pandawiki_conversation工具从PandaWiki知识库中检索答案并进行回答"),
-	)
-
+func NewMCPHandler(echo *echo.Echo, baseHandler *handler.BaseHandler, logger *log.Logger, chatUsecase *usecase.ChatUsecase, appUsecase *usecase.AppUsecase) *MCPHandler {
 	h := &MCPHandler{
+		BaseHandler: baseHandler,
 		logger:      logger.WithModule("handler.v1.mcp"),
 		chatUsecase: chatUsecase,
+		appUsecase:  appUsecase,
 	}
 
-	// Register tools
-	h.registerTools(mcpServer)
+	mcpServer := h.createMCPServer()
 
-	// Create HTTP server with context function to extract kbID from header
+	// Create HTTP server with context function to extract kbID and auth token from header
 	h.httpServer = server.NewStreamableHTTPServer(mcpServer,
 		server.WithHTTPContextFunc(func(ctx context.Context, r *http.Request) context.Context {
 			kbID := r.Header.Get("X-KB-ID")
-			return context.WithValue(ctx, kbIDContextKey, kbID)
+			authHeader := r.Header.Get("Authorization")
+			token := strings.TrimPrefix(authHeader, "Bearer ")
+			ctx = context.WithValue(ctx, kbIDContextKey, kbID)
+			ctx = context.WithValue(ctx, authContextKey, token)
+			return ctx
 		}),
 	)
 
-	echo.Any("/mcp", h.MCPHandler)
+	echo.Any("/mcp", h.MCP)
 	return h
 }
 
-func (h *MCPHandler) MCPHandler(c echo.Context) error {
+func (h *MCPHandler) MCP(c echo.Context) error {
 	h.httpServer.ServeHTTP(c.Response(), c.Request())
 	return nil
 }
 
-func (h *MCPHandler) registerTools(mcpServer *server.MCPServer) {
-	// Conversation tools
+func (h *MCPHandler) createMCPServer() *server.MCPServer {
+	mcpServer := server.NewMCPServer("PandaWiki MCP Server", "1.0.0",
+		server.WithToolCapabilities(true),
+		server.WithLogging(),
+		server.WithInstructions("当用户提问时, 使用pandawiki_conversation工具从PandaWiki知识库中检索答案并进行回答"),
+		// server.WithHooks(h.createMCPHooks()),
+	)
 	mcpServer.AddTool(
 		mcp.NewTool("chat_with_pandawiki",
 			mcp.WithDescription("使用此工具与 PandaWiki 对话, 从其人工智能知识库中检索答案"),
 			mcp.WithString("message", mcp.Required(), mcp.Description("User message")),
 		),
-		h.handleChat,
+		h.authWrapper(h.handleChat),
 	)
+	return mcpServer
+}
+
+func (h *MCPHandler) authWrapper(next func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		kbID, _ := ctx.Value(kbIDContextKey).(string)
+		if kbID == "" {
+			return nil, fmt.Errorf("kb_id is required")
+		}
+		info, err := h.appUsecase.GetMCPServerAppInfo(ctx, kbID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get mcp settings: %w", err)
+		}
+		if !info.Settings.MCPServerSettings.IsEnabled {
+			return nil, fmt.Errorf("mcp server is not enabled")
+		}
+		if info.Settings.MCPServerSettings.SampleAuth.Enabled {
+			token, _ := ctx.Value(authContextKey).(string)
+			if token == "" || token != info.Settings.MCPServerSettings.SampleAuth.Password {
+				return nil, fmt.Errorf("unauthorized: invalid token")
+			}
+		}
+		return next(ctx, req)
+	}
 }
 
 func (h *MCPHandler) handleChat(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {

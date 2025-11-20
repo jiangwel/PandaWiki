@@ -140,7 +140,6 @@ func createApp() (*App, error) {
 		return nil, err
 	}
 	authV1Handler := v1.NewAuthV1Handler(echo, baseHandler, logger, authUsecase)
-	mcpHandler := v1.NewMCPHandler(echo, logger, chatUsecase)
 	apiHandlers := &v1.APIHandlers{
 		UserHandler:          userHandler,
 		KnowledgeBaseHandler: knowledgeBaseHandler,
@@ -154,7 +153,6 @@ func createApp() (*App, error) {
 		StatHandler:          statHandler,
 		CommentHandler:       commentHandler,
 		AuthV1Handler:        authV1Handler,
-		MCPHandler:           mcpHandler,
 	}
 	shareNodeHandler := share.NewShareNodeHandler(baseHandler, echo, nodeUsecase, logger)
 	shareAppHandler := share.NewShareAppHandler(echo, baseHandler, logger, appUsecase)
@@ -173,6 +171,7 @@ func createApp() (*App, error) {
 	shareCaptchaHandler := share.NewShareCaptchaHandler(baseHandler, echo, logger)
 	openapiV1Handler := share.NewOpenapiV1Handler(echo, baseHandler, logger, authUsecase, appUsecase)
 	shareCommonHandler := share.NewShareCommonHandler(echo, baseHandler, logger, fileUsecase)
+    mcpHandler := share.NewMCPHandler(echo, baseHandler, logger, chatUsecase, appUsecase)
 	shareHandler := &share.ShareHandler{
 		ShareNodeHandler:         shareNodeHandler,
 		ShareAppHandler:          shareAppHandler,
@@ -186,6 +185,7 @@ func createApp() (*App, error) {
 		ShareCaptchaHandler:      shareCaptchaHandler,
 		OpenapiV1Handler:         openapiV1Handler,
 		ShareCommonHandler:       shareCommonHandler,
+		MCPHandler:               mcpHandler,
 	}
 	client, err := telemetry.NewClient(logger, knowledgeBaseRepository)
 	if err != nil {

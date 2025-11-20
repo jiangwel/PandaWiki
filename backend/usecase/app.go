@@ -124,6 +124,14 @@ func (u *AppUsecase) ValidateUpdateApp(ctx context.Context, id string, req *doma
 }
 
 func (u *AppUsecase) UpdateApp(ctx context.Context, id string, appRequest *domain.UpdateAppReq) error {
+	// create mcp server app if not exist
+	if id == string(domain.AppTypeMcpServer) {
+		_, err := u.repo.GetOrCreateAppByKBIDAndType(ctx, appRequest.KbID, domain.AppTypeMcpServer)
+		if err != nil {
+			return err
+		}
+	}
+
 	if err := u.handleBotAuths(ctx, id, appRequest.Settings); err != nil {
 		return err
 	}
@@ -534,6 +542,19 @@ func (u *AppUsecase) GetAppDetailByKBIDAndAppType(ctx context.Context, kbID stri
 		appDetailResp.RecommendNodes = nodes
 	}
 	return appDetailResp, nil
+}
+
+func (u *AppUsecase) GetMCPServerAppInfo(ctx context.Context, kbID string) (*domain.AppInfoResp, error) {
+	apiApp, err := u.repo.GetOrCreateAppByKBIDAndType(ctx, kbID, domain.AppTypeMcpServer)
+	if err != nil {
+		return nil, err
+	}
+	appInfo := &domain.AppInfoResp{
+		Settings: domain.AppSettingsResp{
+			MCPServerSettings: apiApp.Settings.MCPServerSettings,
+		},
+	}
+	return appInfo, nil
 }
 
 func (u *AppUsecase) ShareGetWebAppInfo(ctx context.Context, kbID string, authId uint) (*domain.AppInfoResp, error) {
