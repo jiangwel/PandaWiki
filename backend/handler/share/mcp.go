@@ -63,20 +63,51 @@ func (h *MCPHandler) MCP(c echo.Context) error {
 }
 
 func (h *MCPHandler) createMCPServer() *server.MCPServer {
-	mcpServer := server.NewMCPServer("PandaWiki MCP Server", "1.0.0",
+	var srv *server.MCPServer
+	hooks := &server.Hooks{}
+	hooks.AddOnRegisterSession(func(ctx context.Context, session server.ClientSession) {
+		kbID, _ := ctx.Value(kbIDContextKey).(string)
+		defaultName := "get_docs"
+		defaultDesc := "为解决用户的问题从知识库中检索文档"
+
+		toolName := defaultName
+		toolDesc := defaultDesc
+
+		if kbID != "" {
+			info, err := h.appUsecase.GetMCPServerAppInfo(ctx, kbID)
+			if err == nil {
+				name := info.Settings.MCPServerSettings.GetDocsToolSettings.Name
+				desc := info.Settings.MCPServerSettings.GetDocsToolSettings.Desc
+				if name != "" {
+					toolName = name
+				}
+				if desc != "" {
+					toolDesc = desc
+				}
+			} else {
+				h.logger.Warn("createMCPHooks", log.Any("kbID:", kbID), log.Any("failed to get mcp settings, use default name and desc", err))
+			}
+		} else {
+			h.logger.Warn("createMCPHooks", log.Any("kbID:", kbID), log.Any("kb is empty, use default name and desc", nil))
+		}
+
+		if srv != nil {
+			srv.AddSessionTool(session.SessionID(),
+				mcp.NewTool(toolName,
+					mcp.WithDescription(toolDesc),
+					mcp.WithString("message", mcp.Required(), mcp.Description("User message")),
+				),
+				h.authWrapper(h.handleGetDocs),
+			)
+		}
+	})
+
+	srv = server.NewMCPServer("PandaWiki MCP Server", "1.0.0",
 		server.WithToolCapabilities(true),
 		server.WithLogging(),
-		server.WithInstructions("当用户提问时, 使用pandawiki_conversation工具从PandaWiki知识库中检索答案并进行回答"),
-		// server.WithHooks(h.createMCPHooks()),
+		server.WithHooks(hooks),
 	)
-	mcpServer.AddTool(
-		mcp.NewTool("chat_with_pandawiki",
-			mcp.WithDescription("使用此工具与 PandaWiki 对话, 从其人工智能知识库中检索答案"),
-			mcp.WithString("message", mcp.Required(), mcp.Description("User message")),
-		),
-		h.authWrapper(h.handleChat),
-	)
-	return mcpServer
+	return srv
 }
 
 func (h *MCPHandler) authWrapper(next func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -102,7 +133,7 @@ func (h *MCPHandler) authWrapper(next func(context.Context, mcp.CallToolRequest)
 	}
 }
 
-func (h *MCPHandler) handleChat(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (h *MCPHandler) handleGetDocs(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	message := req.GetString("message", "")
 	if message == "" {
 		return nil, fmt.Errorf("message is required")
@@ -122,7 +153,7 @@ func (h *MCPHandler) handleChat(ctx context.Context, req mcp.CallToolRequest) (*
 	}
 
 	// Call chat usecase
-	eventCh, err := h.chatUsecase.Chat(ctx, chatReq)
+	eventCh, err := h.chatUsecase.ChatRagOnly(ctx, chatReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start chat: %w", err)
 	}

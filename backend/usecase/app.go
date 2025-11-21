@@ -521,6 +521,8 @@ func (u *AppUsecase) GetAppDetailByKBIDAndAppType(ctx context.Context, kbID stri
 		HomePageSetting:    app.Settings.HomePageSetting,
 
 		WecomAIBotSettings: app.Settings.WecomAIBotSettings,
+
+		MCPServerSettings: app.Settings.MCPServerSettings,
 	}
 	// init ai feedback string
 	if app.Settings.AIFeedbackSettings.AIFeedbackType == nil {

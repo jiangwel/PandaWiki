@@ -179,8 +179,14 @@ type WebAppLandingTheme struct {
 }
 
 type MCPServerSettings struct {
-	IsEnabled  bool       `json:"is_enabled"`
-	SampleAuth SimpleAuth `json:"sample_auth"`
+	IsEnabled           bool            `json:"is_enabled"`
+	GetDocsToolSettings MCPToolSettings `json:"get_docs_tool_settings"`
+	SampleAuth          SimpleAuth      `json:"sample_auth"`
+}
+
+type MCPToolSettings struct {
+	Name string `json:"name"`
+	Desc string `json:"desc"`
 }
 
 type LarkBotSettings struct {
@@ -542,12 +548,12 @@ type AppSettingsResp struct {
 	OpenAIAPIBotSettings OpenAIAPIBotSettings `json:"openai_api_bot_settings"`
 	// Disclaimer Settings
 	DisclaimerSettings DisclaimerSettings `json:"disclaimer_settings"`
-    // WebApp Landing Settings
-    WebAppLandingConfigs []WebAppLandingConfigResp `json:"web_app_landing_configs,omitempty"`
-    WebAppLandingTheme   WebAppLandingTheme        `json:"web_app_landing_theme"`
-    HomePageSetting      consts.HomePageSetting    `json:"home_page_setting"`
-    // MCP Server Settings
-    MCPServerSettings MCPServerSettings `json:"mcp_server_settings,omitempty"`
+	// WebApp Landing Settings
+	WebAppLandingConfigs []WebAppLandingConfigResp `json:"web_app_landing_configs,omitempty"`
+	WebAppLandingTheme   WebAppLandingTheme        `json:"web_app_landing_theme"`
+	HomePageSetting      consts.HomePageSetting    `json:"home_page_setting"`
+	// MCP Server Settings
+	MCPServerSettings MCPServerSettings `json:"mcp_server_settings,omitempty"`
 }
 
 type WebAppLandingConfigResp struct {
