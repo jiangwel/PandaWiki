@@ -1,0 +1,76 @@
+# PandaWiki 后端配置文件示例
+# 复制此文件为 config.yml 并根据实际情况修改
+
+# 日志配置
+log:
+  level: 0  # -4: debug, 0: info, 4: warn, 8: error
+
+# HTTP 服务器配置
+http:
+  port: 8000  # API 服务监听端口
+
+# MCP (Model Context Protocol) 配置
+mcp:
+  port: 8001  # MCP 服务端口 (当前未使用，MCP 集成在主 API 中)
+
+# 管理员密码
+# 建议通过环境变量 ADMIN_PASSWORD 设置
+admin_password: ""
+
+# PostgreSQL 数据库配置
+pg:
+  dsn: "host=panda-wiki-postgres user=panda-wiki password=panda-wiki-secret dbname=panda-wiki port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+  # 或通过环境变量 POSTGRES_PASSWORD 覆盖密码
+  # 或通过环境变量 PG_DSN 直接设置完整 DSN
+
+# 消息队列配置
+mq:
+  type: "nats"  # 消息队列类型 (目前只支持 nats)
+  nats:
+    server: "nats://169.254.15.13:4222"  # NATS 服务器地址
+    user: "panda-wiki"
+    password: ""  # 通过环境变量 NATS_PASSWORD 设置
+
+# RAG (检索增强生成) 配置
+rag:
+  provider: "ct"  # RAG 提供商 (ct: 长亭科技 RAG 服务)
+  ct_rag:
+    base_url: "http://169.254.15.18:8080/api/v1"  # RAG 服务地址
+    api_key: "sk-1234567890"  # RAG API 密钥
+
+# Redis 配置
+redis:
+  addr: "panda-wiki-redis:6379"  # Redis 地址
+  password: ""  # 通过环境变量 REDIS_PASSWORD 设置
+
+# 认证配置
+auth:
+  type: "jwt"  # 认证类型 (jwt: JSON Web Token)
+  jwt:
+    secret: ""  # JWT 密钥，通过环境变量 JWT_SECRET 设置 (必须)
+
+# S3 对象存储配置
+s3:
+  endpoint: "panda-wiki-minio:9000"  # S3 端点 (MinIO 或 AWS S3)
+  access_key: "s3panda-wiki"  # S3 访问密钥
+  secret_key: ""  # S3 密钥，通过环境变量 S3_SECRET_KEY 设置
+
+# Sentry 错误追踪配置
+sentry:
+  enabled: false  # 是否启用 Sentry (生产环境建议启用)
+  dsn: ""  # Sentry DSN，通过环境变量 SENTRY_DSN 设置
+
+# Caddy API 配置
+# 用于动态配置反向代理
+caddy_api: "/app/run/caddy-admin.sock"
+
+# 子网前缀
+# 用于 Docker 网络配置
+subnet_prefix: "169.254.15"
+
+# APM (应用性能监控) 配置
+# 通过 viper 读取，不在主配置结构体中
+# apm:
+#   enabled: false
+#   service_name: "panda-wiki-api"
+#   endpoint: "http://localhost:4318"  # OpenTelemetry Collector 端点

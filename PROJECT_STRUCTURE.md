@@ -33,8 +33,15 @@ PandaWiki 是一个由 AI 大模型驱动的开源知识库搭建系统。该项
 ├── apm/                  # 应用性能管理 (APM) 相关代码
 ├── cmd/                  # 应用程序入口点 (main 函数)
 ├── config/               # 配置文件解析和管理
+│   ├── config.go                # 配置结构定义和加载逻辑
+│   ├── config.example.yml       # 配置文件示例
+│   └── provider.go              # Wire 依赖注入配置
 ├── consts/               # 常量定义
 ├── docs/                 # 项目内部文档
+│   ├── BACKEND_ARCHITECTURE.md  # 后端架构详细文档
+│   ├── MCP_INTEGRATION.md       # MCP 集成实现文档
+│   ├── MCP_CLIENT_CONFIG.md     # MCP 客户端配置指南
+│   └── swagger.yaml             # Swagger API 文档
 ├── domain/               # 领域模型和核心业务逻辑
 ├── handler/              # HTTP 请求处理器
 ├── log/                  # 日志管理
