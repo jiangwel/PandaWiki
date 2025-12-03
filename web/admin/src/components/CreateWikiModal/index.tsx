@@ -165,7 +165,8 @@ const CreateWikiModal = () => {
 
   useEffect(() => {
     if (kbList?.length === 0) setOpen(true);
-  }, [kbList]);
+    if ((kbList || []).length > 0 && activeStep === 0) setActiveStep(1);
+  }, [kbList, activeStep]);
 
   return (
     <Modal
